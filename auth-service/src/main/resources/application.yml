@@ -1,0 +1,62 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/auth_service?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    ip-address: 127.0.0.1
+    instance-id: ${spring.application.name}:${server.port}       # 🔥 ép định danh
+    metadata-map:
+      instanceId: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    non-secure-port-enabled: true
+    non-secure-port: ${server.port}
+    # ✅ ép cứng không cho Spring Boot tự lấy host.docker.internal
+    preferIpAddress: true
+    # 🚀 override bằng System property, đảm bảo sử dụng 127.0.0.1
+    status-page-url: http://127.0.0.1:${server.port}/actuator/info
+    health-check-url: http://127.0.0.1:${server.port}/actuator/health
+    home-page-url: http://127.0.0.1:${server.port}/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+services:
+  resident:
+    url: http://localhost:8083
+  tenant:
+    url: http://localhost:8082
+
+logging:
+  level:
+    org.springframework.web: DEBUG
+
