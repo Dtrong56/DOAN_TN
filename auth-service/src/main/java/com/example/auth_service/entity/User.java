@@ -35,6 +35,9 @@ public class User extends BaseEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "first_login")
+    private Boolean firstLogin = true;
+
     // Relationship mappings
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Credential> credentials = new HashSet<>();

@@ -8,7 +8,6 @@ import org.hibernate.annotations.GenericGenerator;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Entity
 @Table(name = "resident_profile",
@@ -19,16 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ResidentProfile {
-
-    @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "CHAR(36)")
-    private UUID id;
-
-    @Column(name = "user_id", columnDefinition = "CHAR(36)", nullable = false)
-    private UUID userId;
+public class ResidentProfile extends BaseEntity {
 
     @Column(name = "full_name", nullable = false, length = 255)
     private String fullName;

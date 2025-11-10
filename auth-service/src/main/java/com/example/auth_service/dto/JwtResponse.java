@@ -8,13 +8,15 @@ public class JwtResponse {
     private List<String> roles;
     private String tenantId;
     private String expiresAt;
+    private Boolean firstLogin;
 
-    public JwtResponse(String token, String username, List<String> roles, String tenantId, String expiresAt) {
+    public JwtResponse(String token, String username, List<String> roles, String tenantId, String expiresAt, Boolean firstLogin) {
         this.token = token;
         this.username = username;
         this.roles = roles;
         this.tenantId = tenantId;
         this.expiresAt = expiresAt;
+        this.firstLogin = firstLogin;
     }
 
     // getters/setters
@@ -47,5 +49,13 @@ public class JwtResponse {
     }
     public void setExpiresAt(String expiresAt) {
         this.expiresAt = expiresAt;
+    }
+
+    public Boolean getFirstLogin() {
+        return firstLogin;
+    }
+
+    public void setFirstLogin(Boolean firstLogin) {
+        this.firstLogin = firstLogin;
     }
 }

@@ -4,9 +4,8 @@ import com.example.resident_service.entity.ResidentProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
-import java.util.UUID;
 
-public interface ResidentProfileRepository extends JpaRepository<ResidentProfile, UUID> {
-    Optional<ResidentProfile> findByUserId(UUID userId);
+public interface ResidentProfileRepository extends JpaRepository<ResidentProfile, String> {
     Optional<ResidentProfile> findByCccd(String cccd);
+    Optional<ResidentProfile> findByCccdAndTenantId(String cccd, String tenantId);
 }

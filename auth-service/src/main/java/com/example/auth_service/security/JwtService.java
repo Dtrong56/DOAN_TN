@@ -39,14 +39,16 @@ public class JwtService {
     }
 
 
-    public String extractUsername(String token) {
-        return Jwts.parserBuilder()
+    public String extractUserId(String token) {
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
+
+        return claims.get("userId", String.class);
     }
+
 
     public boolean validateToken(String token) {
         try {
@@ -72,4 +74,11 @@ public class JwtService {
                 .getBody();
     }
 
+    public Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
 }

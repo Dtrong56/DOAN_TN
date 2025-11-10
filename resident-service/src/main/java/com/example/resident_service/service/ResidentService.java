@@ -4,17 +4,16 @@ import com.example.resident_service.dto.ResidentAccountResponse;
 import com.example.resident_service.entity.ResidentAccount;
 import com.example.resident_service.repository.ResidentAccountRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class ResidentAccountService {
+public class ResidentService {
 
     private final ResidentAccountRepository residentAccountRepository;
 
-    public ResidentAccountResponse getTenantByUser(UUID userId) {
+    public ResidentAccountResponse getTenantByUser(String userId) {
         ResidentAccount account = residentAccountRepository.findFirstByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Resident account not found for userId: " + userId));
 
@@ -24,3 +23,5 @@ public class ResidentAccountService {
                 .build();
     }
 }
+
+

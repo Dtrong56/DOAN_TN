@@ -34,7 +34,8 @@ public class SecurityConfig {
                     "/auth/init-admin",
                     "/auth/validate-token",
                     "/auth/create-user",
-                    "/auth/update-active/**"     // 👈 thêm dòng này
+                    "/auth/update-active/**",
+                    "/api/v1/auth/bulk-create-users"     // 👈 thêm dòng này
                 ).permitAll()
                 .anyRequest().authenticated()
             )

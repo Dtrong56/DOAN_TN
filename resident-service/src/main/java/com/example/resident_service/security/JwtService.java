@@ -6,35 +6,19 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "mysecretkeymysecretkeymysecretkey123"; // >= 32 bytes
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1h
+    private static final String SECRET_KEY = "mysecretkeymysecretkeymysecretkey123"; // Phải trùng với Auth Service
 
     private Key getSignKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    public String generateToken(String username) {
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(getSignKey(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-    }
-
+    // ✅ Chỉ dùng để xác thực token nhận từ Auth Service
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -45,5 +29,40 @@ public class JwtService {
         } catch (JwtException e) {
             return false;
         }
+    }
+
+    // ✅ Lấy toàn bộ payload
+    private Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    // ✅ Lấy username
+    public String extractUsername(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    // ✅ Lấy userId
+    public String extractUserId(String token) {
+        return (String) parseClaims(token).get("userId");
+    }
+
+    // ✅ Lấy tenantId
+    public String extractTenantId(String token) {
+        return (String) parseClaims(token).get("tenantId");
+    }
+
+    // ✅ Lấy danh sách roles
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        return (List<String>) parseClaims(token).get("roles");
+    }
+
+    // ✅ Lấy thời hạn token
+    public Date extractExpiration(String token) {
+        return parseClaims(token).getExpiration();
     }
 }

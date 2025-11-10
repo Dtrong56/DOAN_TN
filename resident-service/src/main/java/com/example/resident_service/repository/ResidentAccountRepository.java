@@ -6,11 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-public interface ResidentAccountRepository extends JpaRepository<ResidentAccount, UUID> {
-    List<ResidentAccount> findByTenantId(UUID tenantId);
-    Optional<ResidentAccount> findByUserId(UUID userId);
+public interface ResidentAccountRepository extends JpaRepository<ResidentAccount, String> {
+    List<ResidentAccount> findByTenantId(String tenantId);
+    Optional<ResidentAccount> findByUserId(String userId);
     List<ResidentAccount> findByStatus(ResidentAccountStatus status);
-    Optional<ResidentAccount> findFirstByUserId(UUID userId);
+    Optional<ResidentAccount> findFirstByUserId(String userId);
+    Optional<ResidentAccount> findByTenantIdAndResidentProfileId(String tenantId, String id);
 }

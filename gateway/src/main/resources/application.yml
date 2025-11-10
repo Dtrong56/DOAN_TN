@@ -32,6 +32,17 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader
+
+        # Resident-service route
+        - id: resident-service
+          uri: lb://resident-service
+          predicates:
+            - Path=/resident/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - PreserveHostHeader
+            - StripPrefix=0
+
       
 
 eureka:

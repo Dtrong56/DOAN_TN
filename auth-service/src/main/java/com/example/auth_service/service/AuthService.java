@@ -1,9 +1,12 @@
 package com.example.auth_service.service;
 
+import com.example.auth_service.dto.ChangePasswordRequest;
+import com.example.auth_service.dto.ChangePasswordResponse;
 import com.example.auth_service.dto.CreateAdminRequest;
 import com.example.auth_service.dto.CreateUserRequest;
 import com.example.auth_service.dto.JwtResponse;
 import com.example.auth_service.dto.LoginRequest;
+import com.example.auth_service.dto.UserResponse;
 import com.example.auth_service.entity.Credential;
 import com.example.auth_service.entity.User;
 import com.example.auth_service.entity.UserRole;
@@ -17,6 +20,9 @@ import org.springframework.stereotype.Service;
 import com.example.auth_service.entity.Role;
 import com.example.auth_service.client.TenantClient;
 import com.example.auth_service.client.ResidentClient;
+import com.example.auth_service.integration.MonitoringClient;
+
+
 
 
 import java.time.Instant;
@@ -26,8 +32,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -38,26 +46,28 @@ public class AuthService {
     private final JwtService jwtService;
     private final TenantClient tenantClient;
     private final ResidentClient residentClient;
+    private final MonitoringClient monitoringClient;
+
 
     
 
-    public AuthService(UserRepository userRepository,
-                       CredentialRepository credentialRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService, 
-                       RoleRepository roleRepository,
-                       UserRoleRepository userRoleRepository,
-                       TenantClient tenantClient,
-                       ResidentClient residentClient) {
-        this.userRepository = userRepository;
-        this.credentialRepository = credentialRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-        this.roleRepository = roleRepository;
-        this.userRoleRepository = userRoleRepository;
-        this.tenantClient = tenantClient;
-        this.residentClient = residentClient;
-    }
+    // public AuthService(UserRepository userRepository,
+    //                    CredentialRepository credentialRepository,
+    //                    PasswordEncoder passwordEncoder,
+    //                    JwtService jwtService, 
+    //                    RoleRepository roleRepository,
+    //                    UserRoleRepository userRoleRepository,
+    //                    TenantClient tenantClient,
+    //                    ResidentClient residentClient) {
+    //     this.userRepository = userRepository;
+    //     this.credentialRepository = credentialRepository;
+    //     this.passwordEncoder = passwordEncoder;
+    //     this.jwtService = jwtService;
+    //     this.roleRepository = roleRepository;
+    //     this.userRoleRepository = userRoleRepository;
+    //     this.tenantClient = tenantClient;
+    //     this.residentClient = residentClient;
+    // }
 
     /**
      * Xử lý đăng nhập, xác thực username/password và sinh JWT token.
@@ -116,8 +126,9 @@ public class AuthService {
                 token,
                 user.getUsername(),
                 roles,
-                tenantId != null ? tenantId.toString() : null,
-                expires.toInstant().toString()
+                tenantId,
+                expires.toInstant().toString(),
+                user.getFirstLogin() // ✅ thêm line này
         );
 
         // 8️⃣ Ghi log (tạm thời)
@@ -195,4 +206,81 @@ public class AuthService {
 
         System.out.printf("[SYSTEM] 🔄 Updated active=%s for user %s%n", active, user.getUsername());
     }
+
+    /**
+     * Reset tài khoản BQL: đặt lại mật khẩu về "123456" và deactivate account.
+     */
+    @Transactional
+    public UserResponse resetBqlAccount(String targetUserId, String targetTenantId, String actionUserId) {
+
+        User user = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Khóa account
+        user.setActive(false);
+        userRepository.save(user);
+
+        // Reset mật khẩu
+        Credential credential = credentialRepository.findByUserId(targetUserId)
+                .orElseThrow(() -> new RuntimeException("Credential not found"));
+        credential.setHashedPassword(passwordEncoder.encode("123456"));
+        credentialRepository.save(credential);
+
+        // ✅ Ghi log
+        monitoringClient.logAction(
+                actionUserId,          // user đang thao tác
+                targetTenantId,        // tenant của user bị reset → truyền từ body
+                "RESET_BQL_PASSWORD",  // action
+                "User",                // object type
+                targetUserId,          // object id
+                "Reset password to default and deactivate BQL account"
+        );
+
+        return new UserResponse(user.getId(), user.getUsername(), false, "Account reset successful");
+    }
+
+    /**
+     * Đổi mật khẩu cho user.
+     */
+    @Transactional
+    public ChangePasswordResponse changePassword(String userId, ChangePasswordRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Lấy credential mới nhất
+        Credential credential = credentialRepository.findByUserId(userId)
+        .orElseThrow(() -> new RuntimeException("Credential not found"));
+
+
+        if (!passwordEncoder.matches(request.getOldPassword(), credential.getHashedPassword())) {
+            throw new RuntimeException("Old password is incorrect");
+        }
+
+        // Tạo credential mới (không sửa credential cũ → để phục vụ tracking)
+        Credential newCred = new Credential();
+        newCred.setUser(user);
+        newCred.setHashedPassword(passwordEncoder.encode(request.getNewPassword()));
+        newCred.setLastPasswordChange(Instant.now());
+        credentialRepository.save(newCred);
+
+        // Cập nhật user
+        user.setFirstLogin(false);
+        user.setActive(true);
+        userRepository.save(user);
+
+        // Ghi log:
+        monitoringClient.logAction(
+                userId,
+                "CHANGE_PASSWORD",
+                "User",
+                userId,
+                "User changed their password",
+                null
+        );
+
+
+        return new ChangePasswordResponse("Password changed successfully");
+    }
+
 }

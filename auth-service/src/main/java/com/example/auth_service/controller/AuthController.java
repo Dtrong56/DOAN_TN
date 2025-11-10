@@ -5,11 +5,18 @@ import com.example.auth_service.dto.ValidateTokenRequest;
 import com.example.auth_service.dto.JwtResponse;
 import com.example.auth_service.service.AuthService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.example.auth_service.dto.CreateAdminRequest;
-import com.example.auth_service.dto.CreateUserRequest;
-import com.example.auth_service.entity.User;
 import java.util.Map;
+import com.example.auth_service.security.JwtService;
+
+import org.springframework.security.core.Authentication;
+import com.example.auth_service.dto.UserResponse;
+import com.example.auth_service.dto.ResetBqlRequest;
+import com.example.auth_service.dto.ChangePasswordRequest;
+import com.example.auth_service.dto.ChangePasswordResponse;
+
 
 
 @RestController
@@ -17,9 +24,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtService jwtService) {
         this.authService = authService;
+        this.jwtService = jwtService;
     }
 
     // Login endpoint
@@ -44,14 +53,50 @@ public class AuthController {
         return ResponseEntity.ok(isValid);
     }
 
-    // // Tenant user creation endpoint
-    // @PostMapping("/create-user")
-    // public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
-    //     User user = authService.createTenantUser(request);
-    //     return ResponseEntity.ok(Map.of(
-    //         "userId", user.getId(),
-    //         "username", user.getUsername()
-    //     ));
-    // }    
+    // Reset BQL account endpoint
+    @PutMapping("/v1/users/reset")
+    public ResponseEntity<?> resetBqlAccount(@RequestBody ResetBqlRequest request) {
+
+        // Lấy userId của người đang thao tác (admin) từ authentication.details
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String adminUserId = "system"; // fallback
+
+        if (authentication != null && authentication.getDetails() instanceof Map<?,?> details) {
+            Object val = details.get("userId");
+            if (val != null) adminUserId = val.toString();
+        }
+
+        // Validate request
+        if (request == null || request.getUserId() == null || request.getUserId().isBlank()
+                || request.getTenantId() == null || request.getTenantId().isBlank()) {
+            return ResponseEntity.badRequest().body("userId and tenantId are required");
+        }
+
+        UserResponse updated = authService.resetBqlAccount(request.getUserId(), request.getTenantId(), adminUserId);
+        return ResponseEntity.ok(updated);
+    }
+
+    // Change password for the first time
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        // ✅ Lấy token từ header
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("Missing or invalid Authorization header");
+        }
+
+        String token = authHeader.substring(7);
+
+        // ✅ Lấy userId từ token
+        String userId = jwtService.extractUserId(token);
+
+        // ✅ Gọi service xử lý đổi mật khẩu
+        ChangePasswordResponse response = authService.changePassword(userId, request);
+
+        return ResponseEntity.ok(response);
+    }
+
 }
 

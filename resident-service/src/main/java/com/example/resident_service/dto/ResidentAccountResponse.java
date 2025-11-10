@@ -1,7 +1,6 @@
 package com.example.resident_service.dto;
 
 import lombok.*;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -9,6 +8,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class ResidentAccountResponse {
-    private UUID tenantId;
-    private UUID residentProfileId;
+    private String tenantId;
+    private String residentProfileId;
 }

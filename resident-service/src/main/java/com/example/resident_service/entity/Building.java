@@ -8,7 +8,6 @@ import org.hibernate.annotations.GenericGenerator;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "building", indexes = {
@@ -19,16 +18,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Building {
-
-    @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "CHAR(36)")
-    private UUID id;
+public class Building extends BaseEntity {
 
     @Column(name = "tenant_id", columnDefinition = "CHAR(36)", nullable = false)
-    private UUID tenantId;
+    private String tenantId;
 
     @Column(nullable = false, length = 255)
     private String name;
