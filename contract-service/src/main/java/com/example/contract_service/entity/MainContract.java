@@ -6,7 +6,6 @@ import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "main_contract")
@@ -15,15 +14,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MainContract {
-
-    @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    private UUID id;
+public class MainContract extends BaseEntity {
 
     @Column(nullable = false)
-    private UUID tenantId;
+    private String tenantId;
 
     @Column(nullable = false, unique = true, length = 100)
     private String contractCode;

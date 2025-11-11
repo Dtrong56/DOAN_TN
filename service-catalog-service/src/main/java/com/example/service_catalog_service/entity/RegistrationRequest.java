@@ -2,19 +2,14 @@ package com.example.service_catalog_service.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "registration_request")
-public class RegistrationRequest {
+public class RegistrationRequest extends BaseEntity {
 
     public enum Status {
         PENDING, APPROVED, REJECTED
     }
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
 
     @Column(name = "tenant_id", length = 36, nullable = false)
     private String tenantId;

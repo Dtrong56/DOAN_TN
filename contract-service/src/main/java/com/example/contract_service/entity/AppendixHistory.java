@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "appendix_history", uniqueConstraints = {
@@ -16,12 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AppendixHistory {
-
-    @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    private UUID id;
+public class AppendixHistory extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_appendix_id", nullable = false)
@@ -34,7 +28,7 @@ public class AppendixHistory {
     private LocalDateTime changedAt = LocalDateTime.now();
 
     @Column(nullable = false)
-    private UUID changedByUserId;
+    private String changedByUserId;
 
     @Column(nullable = false, length = 50)
     private String changeType;
@@ -44,8 +38,8 @@ public class AppendixHistory {
     private LocalDate oldExpirationDate;
     private LocalDate newExpirationDate;
 
-    private UUID oldPackageId;
-    private UUID newPackageId;
+    private String oldPackageId;
+    private String newPackageId;
 
     @Column(columnDefinition = "TEXT")
     private String note;

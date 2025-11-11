@@ -1,21 +1,21 @@
 package com.example.service_catalog_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(
     name = "package_price_history",
     uniqueConstraints = @UniqueConstraint(name = "uq_pph_pkg_eff", columnNames = {"service_package_id", "effective_from"})
 )
-public class PackagePriceHistory {
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+public class PackagePriceHistory extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_package_id", nullable = false)

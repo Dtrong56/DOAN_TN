@@ -42,7 +42,24 @@ spring:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader
             - StripPrefix=0
-
+        
+        # Service-catalog-service route
+        - id: service-catalog-service
+          uri: lb://service-catalog-service
+          predicates:
+            - Path=/services/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - PreserveHostHeader
+        
+        # Contract-service route
+        - id: contract-service
+          uri: lb://contract-service
+          predicates:
+            - Path=/contracts/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - PreserveHostHeader
       
 
 eureka:

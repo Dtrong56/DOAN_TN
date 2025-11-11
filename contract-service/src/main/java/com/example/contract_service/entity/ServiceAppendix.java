@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 
 @Entity
@@ -15,28 +14,23 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ServiceAppendix {
-
-    @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    private UUID id;
+public class ServiceAppendix extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "main_contract_id", nullable = false)
     private MainContract mainContract;
 
     @Column(nullable = false)
-    private UUID serviceId;
+    private String serviceId;
 
     @Column(nullable = false)
-    private UUID packageId;
+    private String packageId;
 
     @Column(nullable = false)
-    private UUID residentId;
+    private String residentId;
 
     @Column(nullable = false)
-    private UUID apartmentId;
+    private String apartmentId;
 
     private LocalDate signedDate;
 

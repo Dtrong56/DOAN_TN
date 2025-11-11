@@ -1,15 +1,14 @@
 package com.example.service_catalog_service.entity;
 
 import jakarta.persistence.*;
-import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "service_catalog")
-public class ServiceCatalog {
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+public class ServiceCatalog extends BaseEntity {
 
     @Column(name = "tenant_id", length = 36, nullable = false)
     private String tenantId;

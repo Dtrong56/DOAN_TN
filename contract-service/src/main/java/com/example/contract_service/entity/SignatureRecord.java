@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "signature_record")
@@ -14,19 +13,14 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SignatureRecord {
-
-    @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    private UUID id;
+public class SignatureRecord extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_appendix_id", nullable = false)
     private ServiceAppendix serviceAppendix;
 
     @Column(nullable = false)
-    private UUID signerUserId;
+    private String signerUserId;
 
     @Column(nullable = false, length = 50)
     private String signerRole;

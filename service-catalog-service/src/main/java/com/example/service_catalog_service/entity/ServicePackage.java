@@ -1,16 +1,16 @@
 package com.example.service_catalog_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "service_package")
-public class ServicePackage {
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+public class ServicePackage extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id", nullable = false)
