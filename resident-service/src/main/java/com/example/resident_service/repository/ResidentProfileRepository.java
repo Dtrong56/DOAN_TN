@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface ResidentProfileRepository extends JpaRepository<ResidentProfile, String> {
     Optional<ResidentProfile> findByCccd(String cccd);
-    Optional<ResidentProfile> findByCccdAndTenantId(String cccd, String tenantId);
+    // Optional<ResidentProfile> findByCccdAndTenantId(String cccd, String tenantId);
 }

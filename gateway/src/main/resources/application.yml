@@ -56,7 +56,7 @@ spring:
         - id: contract-service
           uri: lb://contract-service
           predicates:
-            - Path=/contracts/**
+            - Path=/contract/**
           filters:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader

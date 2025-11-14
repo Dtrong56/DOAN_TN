@@ -14,6 +14,8 @@ import com.example.auth_service.repository.UserRepository;
 import com.example.auth_service.repository.UserRoleRepository;
 import com.example.auth_service.repository.CredentialRepository;
 import com.example.auth_service.repository.RoleRepository;
+import com.example.auth_service.repository.DigitalSignatureRepository;
+import com.example.auth_service.service.FileStorageService;
 import com.example.auth_service.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,10 @@ import com.example.auth_service.entity.Role;
 import com.example.auth_service.client.TenantClient;
 import com.example.auth_service.client.ResidentClient;
 import com.example.auth_service.integration.MonitoringClient;
+import com.example.auth_service.dto.DigitalSignatureUploadRequest;
+import com.example.auth_service.dto.DigitalSignatureUploadResponse;
+import com.example.auth_service.entity.DigitalSignature;
+
 
 
 
@@ -29,10 +35,10 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
@@ -47,27 +53,8 @@ public class AuthService {
     private final TenantClient tenantClient;
     private final ResidentClient residentClient;
     private final MonitoringClient monitoringClient;
-
-
-    
-
-    // public AuthService(UserRepository userRepository,
-    //                    CredentialRepository credentialRepository,
-    //                    PasswordEncoder passwordEncoder,
-    //                    JwtService jwtService, 
-    //                    RoleRepository roleRepository,
-    //                    UserRoleRepository userRoleRepository,
-    //                    TenantClient tenantClient,
-    //                    ResidentClient residentClient) {
-    //     this.userRepository = userRepository;
-    //     this.credentialRepository = credentialRepository;
-    //     this.passwordEncoder = passwordEncoder;
-    //     this.jwtService = jwtService;
-    //     this.roleRepository = roleRepository;
-    //     this.userRoleRepository = userRoleRepository;
-    //     this.tenantClient = tenantClient;
-    //     this.residentClient = residentClient;
-    // }
+    private final FileStorageService fileStorageService;
+    private final DigitalSignatureRepository digitalSignatureRepository;
 
     /**
      * Xử lý đăng nhập, xác thực username/password và sinh JWT token.
@@ -283,4 +270,61 @@ public class AuthService {
         return new ChangePasswordResponse("Password changed successfully");
     }
 
+    /**
+     * Upload digital signature for user.
+     */
+    @Transactional
+    public DigitalSignatureUploadResponse upload(String userId, DigitalSignatureUploadRequest req) {
+
+        String publicPath;
+        String certPath = null;
+
+        try {
+            // Lưu file public key
+            publicPath = fileStorageService.save(req.getPublicKeyFile(), "public_keys");
+
+            // Lưu file cert nếu có
+            if (req.getCertificateFile() != null) {
+                certPath = fileStorageService.save(req.getCertificateFile(), "certificates");
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save signature files: " + e.getMessage(), e);
+        }
+
+        // Lưu vào DB
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        DigitalSignature ds = new DigitalSignature();
+        ds.setUser(user);
+        ds.setPublicKeyPath(publicPath);
+        ds.setCertFilePath(certPath);
+        ds.setValidFrom(req.getValidFrom());
+        ds.setValidTo(req.getValidTo());
+        ds.setActive(true);
+
+        // ❗ Bạn thiếu thuộc tính publicKeyPath trong entity
+        ds.setPublicKeyPath(publicPath);
+
+        digitalSignatureRepository.save(ds);
+
+        monitoringClient.logAction(
+                userId,
+                "UPLOAD_DIGITAL_SIGNATURE",
+                "DigitalSignature",
+                ds.getId(),
+                "User uploaded digital signature",
+                null
+        );
+
+        return new DigitalSignatureUploadResponse(
+                ds.getId(),
+                publicPath,
+                certPath,
+                ds.getValidFrom(),
+                ds.getValidTo()
+        );
+    }
 }
+

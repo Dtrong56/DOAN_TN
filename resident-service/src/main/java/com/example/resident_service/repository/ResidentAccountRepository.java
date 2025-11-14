@@ -13,4 +13,5 @@ public interface ResidentAccountRepository extends JpaRepository<ResidentAccount
     List<ResidentAccount> findByStatus(ResidentAccountStatus status);
     Optional<ResidentAccount> findFirstByUserId(String userId);
     Optional<ResidentAccount> findByTenantIdAndResidentProfileId(String tenantId, String id);
+    Optional<ResidentAccount> findFirstByResidentProfile_CccdAndTenantId(String cccd, String tenantId);
 }

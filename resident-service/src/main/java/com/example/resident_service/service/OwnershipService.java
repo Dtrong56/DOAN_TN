@@ -25,6 +25,9 @@ public class OwnershipService {
     private final AuthFeignClient authFeignClient;
     private final TenantContext tenantContext;
 
+    /*
+     * Chuyển nhượng quyền sở hữu căn hộ
+     */
     @Transactional
     public OwnershipTransferResult transferOwnership(OwnershipTransferRequest req) {
 
@@ -54,7 +57,7 @@ public class OwnershipService {
         // 3) Chắc chắn có ResidentAccount trong tenant
         // Tìm userId của cư dân cũ nếu có
                 String oldUserId = null;
-                ApartmentOwnership oldOwner = ownershipRepository.findActiveOwnership(req.getApartmentId(), tenantId).orElse(null);
+                ApartmentOwnership oldOwner = ownershipRepository.findActiveOwnership(req.getApartmentId()).orElse(null);
                 if (oldOwner != null) {
                 oldUserId = accountRepository
                         .findByTenantIdAndResidentProfileId(tenantId, oldOwner.getResidentId())
@@ -90,6 +93,7 @@ public class OwnershipService {
         LocalDate transferDate = req.getTransferDate() != null ? req.getTransferDate() : LocalDate.now();
         if (oldOwner != null) {
             oldOwner.setEndDate(transferDate.minusDays(1));
+            oldOwner.setIsRepresentative(false);
             ownershipRepository.save(oldOwner);
         }
 
@@ -98,6 +102,7 @@ public class OwnershipService {
                 .apartment(apt)
                 .residentId(profile.getId()) // Gán đúng residentId từ profile
                 .startDate(transferDate)
+                .isRepresentative(true)
                 .build();
         newOwner = ownershipRepository.save(newOwner);
 

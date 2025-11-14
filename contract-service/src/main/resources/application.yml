@@ -60,3 +60,8 @@ management:
 
 jwt:
   secret: mysecretkeymysecretkeymysecretkey123  # phải trùng với Auth Service
+
+file:
+  storage:
+    base-path: uploads/contracts
+

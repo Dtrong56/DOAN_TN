@@ -56,7 +56,12 @@ services:
   tenant:
     url: http://localhost:8082
 
-logging:
-  level:
-    org.springframework.web: DEBUG
+# logging:
+#   level:
+#     org.springframework.web: DEBUG
+
+file:
+  storage:
+    base-path: uploads/signatures
+
 

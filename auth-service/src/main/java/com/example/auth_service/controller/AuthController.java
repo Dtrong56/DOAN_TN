@@ -16,6 +16,11 @@ import com.example.auth_service.dto.UserResponse;
 import com.example.auth_service.dto.ResetBqlRequest;
 import com.example.auth_service.dto.ChangePasswordRequest;
 import com.example.auth_service.dto.ChangePasswordResponse;
+import com.example.auth_service.dto.DigitalSignatureUploadRequest;
+import com.example.auth_service.dto.DigitalSignatureUploadResponse;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.multipart.MultipartFile;
+import java.time.LocalDate;
 
 
 
@@ -95,6 +100,29 @@ public class AuthController {
         // ✅ Gọi service xử lý đổi mật khẩu
         ChangePasswordResponse response = authService.changePassword(userId, request);
 
+        return ResponseEntity.ok(response);
+    }
+
+    // Upload digital signature endpoint
+    @PostMapping("/digital-signature/upload")
+    public ResponseEntity<?> uploadSignature(
+            @RequestPart("publicKeyFile") MultipartFile publicKey,
+            @RequestPart(value = "certificateFile", required = false) MultipartFile certificate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate validFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate validTo,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+
+        String token = authHeader.substring(7);
+        String userId = jwtService.extractUserId(token);
+
+        DigitalSignatureUploadRequest req = new DigitalSignatureUploadRequest();
+        req.setPublicKeyFile(publicKey);
+        req.setCertificateFile(certificate);
+        req.setValidFrom(validFrom);
+        req.setValidTo(validTo);
+
+        DigitalSignatureUploadResponse response = authService.upload(userId, req);
         return ResponseEntity.ok(response);
     }
 

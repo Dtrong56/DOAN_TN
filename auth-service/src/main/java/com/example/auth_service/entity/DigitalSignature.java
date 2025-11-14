@@ -18,6 +18,9 @@ public class DigitalSignature extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "public_key_path", columnDefinition = "TEXT")
+    private String publicKeyPath;
+
     @Column(name = "cert_file_path", columnDefinition = "TEXT")
     private String certFilePath;
 
@@ -30,3 +33,4 @@ public class DigitalSignature extends BaseEntity {
     @Column(nullable = false)
     private Boolean active = true;
 }
+
