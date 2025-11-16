@@ -2,9 +2,12 @@ package com.example.contract_service.controller;
 
 import com.example.contract_service.dto.ContractUploadRequest;
 import com.example.contract_service.dto.MainContractResponse;
+import com.example.contract_service.dto.RegisterAppendixRequest;
+import com.example.contract_service.dto.RegisterAppendixResponse;
 import com.example.contract_service.dto.ServiceAppendixRequest;
 import com.example.contract_service.dto.ServiceAppendixResponse;
 import com.example.contract_service.service.ContractService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -88,4 +91,11 @@ public class ContractController {
         return ResponseEntity.ok(contractService.getAppendixById(id));
     }
 
+    // Endpoint áp dụng phụ lục dịch vụ
+    @PostMapping("/register")
+    public ResponseEntity<RegisterAppendixResponse> registerServiceAppendix(
+            @RequestBody RegisterAppendixRequest request
+    ) {
+        return ResponseEntity.ok(contractService.registerServiceAppendix(request));
+    }
 }

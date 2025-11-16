@@ -15,7 +15,7 @@ public class TenantClient {
         this.restTemplate = restTemplate;
         this.baseUrl = baseUrl;
     }
-
+//
     public String getTenantIdByManager(String userId) {
         String url = baseUrl + "/api/internal/management-accounts/by-user/" + userId;
         Map response = restTemplate.getForObject(url, Map.class);

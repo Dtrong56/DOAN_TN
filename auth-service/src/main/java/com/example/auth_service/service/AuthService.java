@@ -4,6 +4,7 @@ import com.example.auth_service.dto.ChangePasswordRequest;
 import com.example.auth_service.dto.ChangePasswordResponse;
 import com.example.auth_service.dto.CreateAdminRequest;
 import com.example.auth_service.dto.CreateUserRequest;
+import com.example.auth_service.dto.DigitalSignatureInfoResponse;
 import com.example.auth_service.dto.JwtResponse;
 import com.example.auth_service.dto.LoginRequest;
 import com.example.auth_service.dto.UserResponse;
@@ -36,9 +37,10 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import java.io.IOException;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -91,13 +93,17 @@ public class AuthService {
 
         // 5️⃣ Xác định tenantId (nếu cần)
         String tenantId = null;
+        String residentId = null;
+        Map resp = null;
         try {
             if (roles.contains("BQL")) {
                 // Ban Quản Lý → gọi tenant-service để lấy tenantId
                 tenantId = tenantClient.getTenantIdByManager(user.getId());
             } else if (roles.contains("RESIDENT")) {
                 // Cư dân → gọi resident-service để lấy tenantId
-                tenantId = residentClient.getTenantIdByResident(user.getId());
+                resp = residentClient.getTenantIdByResident(user.getId());
+                tenantId = resp.get("tenantId").toString();
+                residentId = resp.get("residentId").toString();
             }
             // ADMIN → bỏ qua tenantId (Super Admin toàn hệ thống)
         } catch (Exception ex) {
@@ -105,7 +111,7 @@ public class AuthService {
         }
 
         // 6️⃣ Sinh JWT token (có thể kèm tenantId)
-        String token = jwtService.generateToken(user.getId(), user.getUsername(), tenantId, roles);
+        String token = jwtService.generateToken(user.getId(), user.getUsername(), tenantId, roles, residentId);
         Date expires = jwtService.extractExpiration(token);
 
         // 7️⃣ Tạo response
@@ -326,5 +332,33 @@ public class AuthService {
                 ds.getValidTo()
         );
     }
+
+    /*
+     * Lấy chữ ký số của user
+     */
+    @Transactional(readOnly = true)
+    public DigitalSignatureInfoResponse getDigitalSignatureInfo(String userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        DigitalSignature digitalSignature = digitalSignatureRepository
+                .findActiveSignatureByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("User has no digital signature registered"));
+
+        return DigitalSignatureInfoResponse.builder()
+                .userId(user.getId())
+                .fullName(user.getUsername())
+                .email(user.getEmail())
+                .publicKeyPath(digitalSignature.getPublicKeyPath())
+                .certificatePath(digitalSignature.getCertFilePath())
+                .validFrom(digitalSignature.getValidFrom())
+                .validTo(digitalSignature.getValidTo())
+                .active(digitalSignature.getActive())
+                .algorithm("SHA256withRSA")
+                .build();
+    }
+
+
 }
 

@@ -55,6 +55,11 @@ public class JwtService {
         return (String) parseClaims(token).get("tenantId");
     }
 
+    // Lấy residentId
+    public String extractResidentId(String token) {
+        return (String) parseClaims(token).get("residentId");
+    }
+
     // ✅ Lấy danh sách roles
     @SuppressWarnings("unchecked")
     public List<String> extractRoles(String token) {

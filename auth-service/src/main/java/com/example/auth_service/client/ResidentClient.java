@@ -16,11 +16,11 @@ public class ResidentClient {
         this.baseUrl = baseUrl;
     }
 
-    public String getTenantIdByResident(String userId) {
+    public Map getTenantIdByResident(String userId) {
         String url = baseUrl + "/api/internal/resident-accounts/by-user/" + userId;
         Map response = restTemplate.getForObject(url, Map.class);
-        if (response != null && response.get("tenantId") != null) {
-            return response.get("tenantId").toString();
+        if (response != null && response.get("tenantId") != null && response.get("residentId") != null) {
+            return response;
         }
         return null;
     }

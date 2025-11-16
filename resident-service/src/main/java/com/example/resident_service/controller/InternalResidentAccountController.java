@@ -1,5 +1,6 @@
 package com.example.resident_service.controller;
 
+import com.example.resident_service.dto.ResidentAccountInternalResponse;
 import com.example.resident_service.dto.ResidentAccountResponse;
 import com.example.resident_service.service.ResidentService;
 import lombok.RequiredArgsConstructor;
@@ -20,5 +21,13 @@ public class InternalResidentAccountController {
     public ResponseEntity<ResidentAccountResponse> getTenantByUser(@PathVariable String userId) {
         ResidentAccountResponse response = ResidentService.getTenantByUser(userId);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API nội bộ cho contract-service gọi bằng Feign
+     */
+    @GetMapping("/by-user-contract/{userId}")
+    public ResponseEntity<ResidentAccountInternalResponse> getByUserId(@PathVariable String userId) {
+        return ResponseEntity.ok(ResidentService.getResidentInfoByUserId(userId));
     }
 }

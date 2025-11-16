@@ -24,4 +24,12 @@ public class TenantContext {
         String token = authHeader.substring(7);
         return jwtService.extractUserId(token);
     }
+
+    public String getResidentId() {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
+        String token = authHeader.substring(7);
+        return jwtService.extractResidentId(token);
+    }
+
 }

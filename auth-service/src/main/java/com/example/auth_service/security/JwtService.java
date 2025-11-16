@@ -21,10 +21,11 @@ public class JwtService {
     }
 
     // ✅ thêm userId
-    public String generateToken(String userId, String username, String tenantId, List<String> roles) {
+    public String generateToken(String userId, String username, String tenantId, List<String> roles, String residentId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", roles);
-        claims.put("userId", userId); // 👈 thêm userId
+        claims.put("userId", userId);
+        claims.put("residentId", residentId); 
         if (tenantId != null) {
             claims.put("tenantId", tenantId);
         }

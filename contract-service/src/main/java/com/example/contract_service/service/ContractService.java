@@ -1,23 +1,33 @@
 package com.example.contract_service.service;
 
+import com.example.contract_service.client.CatalogClient;
+import com.example.contract_service.client.ResidentClient;
 // import com.example.contract_service.client.MonitoringClient;
 import com.example.contract_service.dto.ContractUploadRequest;
 import com.example.contract_service.dto.MainContractResponse;
+import com.example.contract_service.dto.PackageInfoDTO;
+import com.example.contract_service.dto.RegisterAppendixRequest;
+import com.example.contract_service.dto.RegisterAppendixResponse;
+import com.example.contract_service.dto.ResidentInfoDTO;
 import com.example.contract_service.dto.ServiceAppendixRequest;
 import com.example.contract_service.dto.ServiceAppendixResponse;
+import com.example.contract_service.dto.ServiceInfoDTO;
+import com.example.contract_service.entity.AppendixStatus;
 import com.example.contract_service.entity.MainContract;
 import com.example.contract_service.entity.ServiceAppendix;
+import com.example.contract_service.entity.SignatureRecord;
 import com.example.contract_service.repository.MainContractRepository;
 import com.example.contract_service.repository.ServiceAppendixRepository;
+import com.example.contract_service.repository.SignatureRecordRepository;
 import com.example.contract_service.security.TenantContext;
 
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
@@ -30,11 +40,16 @@ import org.springframework.core.io.Resource;
 @Service
 @RequiredArgsConstructor
 public class ContractService {
+    @Autowired
+    private CatalogClient catalogClient;
 
     private final MainContractRepository mainContractRepository;
     private final TenantContext tenantContext;
     private final ServiceAppendixRepository serviceAppendixRepository;
     private final FileStorageService fileStorageService;
+    private final SignatureRecordRepository signatureRecordRepository;
+    private final ResidentClient residentClient;
+    
     // private final MonitoringClient monitoringClient;
 
 
@@ -238,6 +253,80 @@ public class ContractService {
                 .status("ACTIVE")
                 .build();
     }
+    
+        /*
+         * cư dân ký phụ lục dịch vụ
+         */
+        public RegisterAppendixResponse registerServiceAppendix(RegisterAppendixRequest req) {
+
+        // ==================== 1. Lấy userId & tenantId từ JWT ====================
+        String userId = tenantContext.getUserId();
+        String tenantId = tenantContext.getTenantId();
+
+        // ==================== 2. Lấy residentId & apartmentId từ resident-service ====================
+        ResidentInfoDTO resident = residentClient.getResidentByUserId(userId);
+        String residentId = resident.getId();
+        String apartmentId = resident.getApartmentId();
+
+        // ==================== 3. Lấy thông tin service/package từ catalog-service ====================
+        ServiceInfoDTO serviceInfo = catalogClient.getServiceInfo(req.getServiceId());
+        if (!serviceInfo.isActive()) {
+            throw new RuntimeException("Service is not active");
+        }
+
+        PackageInfoDTO packageInfo =
+                catalogClient.getPackageOfService(req.getServiceId(), req.getPackageId());
+
+        if (!packageInfo.isActive()) {
+            throw new RuntimeException("Package is not active");
+        }
+
+        // ==================== 4. Lấy MainContract của tenant ====================
+        MainContract mainContract = mainContractRepository
+                .findFirstByTenantId(tenantId)
+                .orElseThrow(() -> new RuntimeException("Tenant has no main contract"));
+
+        // ==================== 5. Tính ngày hiệu lực/hết hạn từ package ====================
+        LocalDate effectiveDate = LocalDate.now();
+        LocalDate expirationDate = effectiveDate.plusMonths(packageInfo.getDurationMonths());
+
+        // ==================== 6. Tạo ServiceAppendix ====================
+        ServiceAppendix appendix = ServiceAppendix.builder()
+                .mainContract(mainContract)
+                .serviceId(req.getServiceId())
+                .packageId(req.getPackageId())
+                .residentId(residentId)
+                .apartmentId(apartmentId)
+                .effectiveDate(effectiveDate)
+                .expirationDate(expirationDate)
+                .appendixStatus(AppendixStatus.PENDING_APPROVAL.toString()) // enum mới thêm
+                .build();
+
+        serviceAppendixRepository.save(appendix);
+
+        // ==================== 7. Tạo SignatureRecord rỗng: chờ UC17 ký số ====================
+        SignatureRecord signRecord = SignatureRecord.builder()
+                .serviceAppendix(appendix)
+                .signerUserId(residentId)
+                .signerRole("RESIDENT")
+                .signatureFilePath(null) // chưa ký, UC17 mới upload
+                .build();
+
+        signatureRecordRepository.save(signRecord);
+
+        // ==================== 8. Trả response về FE ====================
+        return RegisterAppendixResponse.builder()
+                .appendixId(appendix.getId())
+                .serviceId(req.getServiceId())
+                .packageId(req.getPackageId())
+                .residentId(residentId)
+                .apartmentId(apartmentId)
+                .effectiveDate(effectiveDate)
+                .expirationDate(expirationDate)
+                .status(AppendixStatus.PENDING_APPROVAL.name())
+                .build();
+    }
+
 
     // Phương thức hỗ trợ tạo mã hợp đồng
     private String generateContractCode(String tenantId) {
@@ -252,4 +341,6 @@ public class ContractService {
 
         return contractCode;
         }
+
+
 }
