@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface DigitalSignatureRepository extends JpaRepository<DigitalSignature, String> {
     Optional<DigitalSignature> findByUserIdAndActiveTrue(String userId);
     Optional<DigitalSignature> findActiveSignatureByUserId(String userId);
+    Optional<DigitalSignature> findActiveByUserId(String userId);
 }

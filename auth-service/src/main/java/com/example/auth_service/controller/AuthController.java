@@ -3,7 +3,6 @@ package com.example.auth_service.controller;
 import com.example.auth_service.dto.LoginRequest;
 import com.example.auth_service.dto.ValidateTokenRequest;
 import com.example.auth_service.dto.JwtResponse;
-import com.example.auth_service.dto.DigitalSignatureInfoResponse;
 import com.example.auth_service.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -126,19 +125,5 @@ public class AuthController {
         DigitalSignatureUploadResponse response = authService.upload(userId, req);
         return ResponseEntity.ok(response);
     }
-
-    //endpoint lấy signature
-    @GetMapping("/digital-signature/info")
-    public ResponseEntity<?> getSignatureInfo(@RequestHeader("Authorization") String authHeader) {
-
-        String token = authHeader.substring(7);
-        String userId = jwtService.extractUserId(token);
-
-        DigitalSignatureInfoResponse response = authService.getDigitalSignatureInfo(userId);
-
-        return ResponseEntity.ok(response);
-    }
-
-
 }
 

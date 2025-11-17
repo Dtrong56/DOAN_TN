@@ -79,6 +79,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || path.startsWith("/auth/validate-token")
                 || path.startsWith("/auth/create-user")
                 || path.startsWith("/auth/update-active")
-                || path.startsWith("/api/v1/auth/bulk-create-users");
+                || path.startsWith("/api/v1/auth/bulk-create-users")
+                || path.startsWith("/auth/internal/digital-signature");
     }
 }

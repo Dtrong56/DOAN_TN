@@ -2,7 +2,7 @@ package com.example.contract_service.controller;
 
 import com.example.contract_service.dto.ContractUploadRequest;
 import com.example.contract_service.dto.MainContractResponse;
-import com.example.contract_service.dto.RegisterAppendixRequest;
+import com.example.contract_service.dto.RegisterAndSignAppendixRequest;
 import com.example.contract_service.dto.RegisterAppendixResponse;
 import com.example.contract_service.dto.ServiceAppendixRequest;
 import com.example.contract_service.dto.ServiceAppendixResponse;
@@ -91,11 +91,11 @@ public class ContractController {
         return ResponseEntity.ok(contractService.getAppendixById(id));
     }
 
-    // Endpoint áp dụng phụ lục dịch vụ
-    @PostMapping("/register")
-    public ResponseEntity<RegisterAppendixResponse> registerServiceAppendix(
-            @RequestBody RegisterAppendixRequest request
-    ) {
-        return ResponseEntity.ok(contractService.registerServiceAppendix(request));
+    //endpoint đăng ký và ký phụ lục hợp đồng
+    @PostMapping("/contract/appendix/register")
+    public ResponseEntity<RegisterAppendixResponse> registerAppendix(
+            @RequestBody RegisterAndSignAppendixRequest req) {
+        return ResponseEntity.ok(contractService.registerAndSignAppendix(req));
     }
+
 }

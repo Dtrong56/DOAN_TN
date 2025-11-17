@@ -2,6 +2,7 @@ package com.example.auth_service.controller;
 
 import com.example.auth_service.dto.CreateUserRequest;
 import com.example.auth_service.dto.CreateUserResponse;
+import com.example.auth_service.dto.DigitalSignatureInternalDTO;
 import com.example.auth_service.entity.*;
 import com.example.auth_service.repository.*;
 import com.example.auth_service.service.AuthService;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.Instant;
 
 @RestController
@@ -107,6 +109,15 @@ public class InternalAuthController {
     ) {
         authService.updateUserActiveStatus(userId, active);
         return ResponseEntity.ok("User " + userId + " active=" + active);
+    }
+    
+    /**
+     * API nội bộ: Lấy digital signature của User
+     * @throws IOException 
+     */
+    @GetMapping("/digital-signature/{userId}")
+    public ResponseEntity<DigitalSignatureInternalDTO> getSignature(@PathVariable String userId) throws IOException {
+        return ResponseEntity.ok(authService.getDigitalSignatureInternal(userId));
     }
 
 }

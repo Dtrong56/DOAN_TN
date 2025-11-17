@@ -13,6 +13,3 @@ public interface MainContractRepository extends JpaRepository<MainContract, Stri
     long countByTenantId(String tenantId);
 }
 
-
-
-

@@ -4,7 +4,8 @@ import com.example.auth_service.dto.ChangePasswordRequest;
 import com.example.auth_service.dto.ChangePasswordResponse;
 import com.example.auth_service.dto.CreateAdminRequest;
 import com.example.auth_service.dto.CreateUserRequest;
-import com.example.auth_service.dto.DigitalSignatureInfoResponse;
+import com.example.auth_service.dto.CreateUserResponse;
+import com.example.auth_service.dto.DigitalSignatureInternalDTO;
 import com.example.auth_service.dto.JwtResponse;
 import com.example.auth_service.dto.LoginRequest;
 import com.example.auth_service.dto.UserResponse;
@@ -40,7 +41,9 @@ import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
+import java.nio.file.Path;
 
 @Service
 @RequiredArgsConstructor
@@ -333,32 +336,27 @@ public class AuthService {
         );
     }
 
-    /*
-     * Lấy chữ ký số của user
+    /**
+     * Lấy digital signature nội bộ của User
+     * @throws IOException 
      */
     @Transactional(readOnly = true)
-    public DigitalSignatureInfoResponse getDigitalSignatureInfo(String userId) {
+    public DigitalSignatureInternalDTO getDigitalSignatureInternal(String userId) throws IOException {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        DigitalSignature digitalSignature = digitalSignatureRepository
-                .findActiveSignatureByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User has no digital signature registered"));
+        DigitalSignature sig = digitalSignatureRepository
+                .findActiveByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("No digital signature found for user"));
 
-        return DigitalSignatureInfoResponse.builder()
-                .userId(user.getId())
-                .fullName(user.getUsername())
-                .email(user.getEmail())
-                .publicKeyPath(digitalSignature.getPublicKeyPath())
-                .certificatePath(digitalSignature.getCertFilePath())
-                .validFrom(digitalSignature.getValidFrom())
-                .validTo(digitalSignature.getValidTo())
-                .active(digitalSignature.getActive())
-                .algorithm("SHA256withRSA")
-                .build();
+        String pem = Files.readString(Path.of(sig.getCertFilePath()));
+
+        return new DigitalSignatureInternalDTO(
+                pem,
+                "SHA256withRSA",
+                true
+        );
     }
-
-
 }
 
