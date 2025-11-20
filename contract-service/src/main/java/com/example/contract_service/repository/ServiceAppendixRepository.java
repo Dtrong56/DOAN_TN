@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface ServiceAppendixRepository extends JpaRepository<ServiceAppendix, String> {
     List<ServiceAppendix> findByMainContract_Id(String contractId);
+
+    List<ServiceAppendix> findByMainContractIdAndResidentId(String mainContractId, String residentId);
 }

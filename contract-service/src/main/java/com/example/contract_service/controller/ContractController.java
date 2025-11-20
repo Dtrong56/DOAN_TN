@@ -1,11 +1,16 @@
 package com.example.contract_service.controller;
 
+import com.example.contract_service.dto.ContractDto;
 import com.example.contract_service.dto.ContractUploadRequest;
 import com.example.contract_service.dto.MainContractResponse;
 import com.example.contract_service.dto.RegisterAndSignAppendixRequest;
 import com.example.contract_service.dto.RegisterAppendixResponse;
 import com.example.contract_service.dto.ServiceAppendixRequest;
 import com.example.contract_service.dto.ServiceAppendixResponse;
+import com.example.contract_service.entity.MainContract;
+import com.example.contract_service.entity.ServiceAppendix;
+import com.example.contract_service.repository.MainContractRepository;
+import com.example.contract_service.repository.ServiceAppendixRepository;
 import com.example.contract_service.service.ContractService;
 
 import lombok.RequiredArgsConstructor;
@@ -16,9 +21,18 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.Path;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/contract")
@@ -26,6 +40,14 @@ import java.io.IOException;
 public class ContractController {
 
     private final ContractService contractService;
+
+    @Autowired
+    private MainContractRepository mainContractRepository;
+    private ServiceAppendixRepository appendixRepository;
+
+    @Value("${file.storage.base-path}")
+    private String basePath;
+
 
     //endpoint upload hợp đồng chung
     @PostMapping("/common")
@@ -96,6 +118,39 @@ public class ContractController {
     public ResponseEntity<RegisterAppendixResponse> registerAppendix(
             @RequestBody RegisterAndSignAppendixRequest req) {
         return ResponseEntity.ok(contractService.registerAndSignAppendix(req));
+    }
+
+    // Endpoint xem file PDF hợp đồng
+   @GetMapping
+    public ResponseEntity<?> getContracts() {
+        List<ContractDto> contracts = contractService.getContractsForCurrentUser(); // service dùng TenantContext
+        if (contracts.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "Chưa có tài liệu liên quan"));
+        }
+        return ResponseEntity.ok(contracts);
+    }
+
+
+    // Endpoint xem file PDF hợp đồng
+    @GetMapping("/{contractId}/pdf")
+    public ResponseEntity<Resource> viewContractPdf(@PathVariable String contractId) throws IOException {
+        Resource resource = contractService.getContractPdf(contractId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
+    }
+
+    // Endpoint xem file PDF phụ lục hợp đồng
+    @GetMapping("/appendices/{appendixId}/pdf")
+    public ResponseEntity<Resource> viewAppendixPdf(@PathVariable String appendixId) throws IOException {
+        Resource resource = contractService.getAppendixPdf(appendixId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
     }
 
 }

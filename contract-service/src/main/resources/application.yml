@@ -64,4 +64,4 @@ jwt:
 file:
   storage:
     base-path: uploads/contracts
-
+    appendix-path: uploads/appendix

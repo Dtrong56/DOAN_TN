@@ -5,6 +5,7 @@ import com.example.contract_service.client.CatalogClient;
 import com.example.contract_service.client.ResidentClient;
 import com.example.contract_service.dto.ApproveAppendixRequest;
 import com.example.contract_service.dto.ApproveAppendixResponse;
+import com.example.contract_service.dto.ContractDto;
 // import com.example.contract_service.client.MonitoringClient;
 import com.example.contract_service.dto.ContractUploadRequest;
 import com.example.contract_service.dto.DigitalSignatureInternalDTO;
@@ -28,7 +29,6 @@ import com.example.contract_service.repository.AppendixHistoryRepository;
 import com.example.contract_service.security.TenantContext;
 import com.example.contract_service.utils.RsaUtils;
 
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -36,15 +36,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.access.AccessDeniedException;
+
+
+
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.PublicKey;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import java.nio.file.Path;
+
+
 
 @Service
 @RequiredArgsConstructor
@@ -61,6 +74,7 @@ public class ContractService {
     private final AppendixHistoryRepository appendixHistoryRepository;
 
     private final AuthFeignClient authClient;
+    private final PdfGeneratorService pdfGenerator;
     
     // private final MonitoringClient monitoringClient;
 
@@ -367,85 +381,201 @@ public class ContractService {
         @Transactional
         public ApproveAppendixResponse approveAppendix(ApproveAppendixRequest req) {
 
-                String userId = tenantContext.getUserId();
+                String approverId = tenantContext.getUserId();
+                String tenantId = tenantContext.getTenantId();
 
+                // 1. Load appendix
                 ServiceAppendix appendix = serviceAppendixRepository.findById(req.getAppendixId())
                         .orElseThrow(() -> new RuntimeException("Appendix not found"));
 
-                if (!appendix.getAppendixStatus().equals(AppendixStatus.PENDING_APPROVAL.name())) {
-                        throw new RuntimeException("Appendix not in pending approval state");
+                if (!appendix.getMainContract().getTenantId().equals(tenantId)) {
+                throw new RuntimeException("You cannot approve appendix from another tenant");
                 }
 
-                // ============ CASE 1: BQL REJECT ============
+                // CASE 1: REJECT
                 if ("REJECT".equalsIgnoreCase(req.getAction())) {
 
-                        appendix.setAppendixStatus(AppendixStatus.REJECTED.name());
-                        appendixHistoryRepository.save(
-                        AppendixHistory.builder()
-                                .serviceAppendix(appendix)
-                                .versionNo(1)
-                                .changedByUserId(userId)
-                                .changeType("REJECT")
-                                .note(req.getRejectReason())
-                                .build()
-                        );
-                        serviceAppendixRepository.save(appendix);
-
-                        return ApproveAppendixResponse.builder()
-                                .appendixId(appendix.getId())
-                                .status(AppendixStatus.REJECTED.name())
-                                .approverUserId(userId)
-                                .build();
+                if (req.getRejectReason() == null || req.getRejectReason().isBlank()) {
+                        throw new RuntimeException("Reject reason is required");
                 }
 
-                // ============ CASE 2: BQL APPROVE ============
+                appendix.setAppendixStatus(AppendixStatus.REJECTED.toString());
+                serviceAppendixRepository.save(appendix);
+
+                return ApproveAppendixResponse.builder()
+                        .appendixId(appendix.getId())
+                        .status("REJECTED")
+                        .approvedDate(null)
+                        .approverUserId(approverId)
+                        .build();
+                }
+
+                // CASE 2: APPROVE
                 if (!"APPROVE".equalsIgnoreCase(req.getAction())) {
-                        throw new RuntimeException("Invalid action");
+                throw new RuntimeException("Invalid action, must be APPROVE or REJECT");
                 }
 
-                // Feign call lấy public key
-                DigitalSignatureInternalDTO keyInfo = authClient.getDigitalSignature(userId);
+                if (req.getSignedHash() == null || req.getSignatureValue() == null) {
+                throw new RuntimeException("Missing digital signature");
+                }
 
-                if (keyInfo == null || !keyInfo.isActive()) {
-                        throw new RuntimeException("No active digital signature");
+                // 2. Get manager public key from Auth-Service
+                DigitalSignatureInternalDTO keyInfo = authClient.getDigitalSignature(approverId);
+                if (!keyInfo.isActive()) {
+                throw new RuntimeException("Digital signature is not active");
                 }
 
                 PublicKey publicKey = RsaUtils.loadPublicKey(keyInfo.getPublicKeyContent());
-
-                boolean ok = RsaUtils.verifyBase64(
+                boolean verified = RsaUtils.verifyBase64(
                         req.getSignedHash(),
                         req.getSignatureValue(),
                         publicKey,
                         keyInfo.getAlgorithm()
                 );
 
-                if (!ok) {
-                        throw new RuntimeException("Signature verification failed");
+                if (!verified) {
+                throw new RuntimeException("Signature verification failed");
                 }
 
-                // Lưu signature record
-                SignatureRecord record = SignatureRecord.builder()
-                        .serviceAppendix(appendix)
-                        .signerUserId(userId)
-                        .signerRole("MANAGER")
-                        .objectType("APPENDIX")
-                        .objectId(appendix.getId())
-                        .signedAt(LocalDateTime.now())
-                        .signatureFilePath(null)
-                        .build();
+                // 3. Lưu signature record của BQL
+                SignatureRecord sig = signatureRecordRepository.save(
+                        SignatureRecord.builder()
+                                .serviceAppendix(appendix)
+                                .signerUserId(approverId)
+                                .signerRole("MANAGER")
+                                .objectType("APPENDIX")
+                                .objectId(appendix.getId())
+                                .signedAt(LocalDateTime.now())
+                                .signatureFilePath(req.getSignatureValue()) // base64
+                                .build()
+                );
 
-                signatureRecordRepository.save(record);
+                // 4. Lấy thông tin dịch vụ để in PDF
+                ServiceInfoDTO serviceInfo = catalogClient.getServiceInfo(appendix.getServiceId());
+                PackageInfoDTO packageInfo = catalogClient.getPackageOfService(
+                        appendix.getServiceId(),
+                        appendix.getPackageId()
+                );
 
-                appendix.setAppendixStatus(AppendixStatus.APPROVED.name());
-                appendix.setSignedDate(LocalDate.now());
+                String pdfBody = """
+                        ===============================
+                        APPROVED SERVICE APPENDIX
+                        ===============================
+
+                        Appendix ID: %s
+                        Main Contract: %s
+
+                        --- SERVICE INFO ---
+                        Service: %s
+                        Package: %s
+                        Duration: %d months
+                        Price: %.2f VND/month
+
+                        --- BQL SIGNATURE ---
+                        Approver: %s
+                        Signed At: %s
+
+                        Signed Hash:
+                        %s
+
+                        Signature Value (Base64):
+                        %s
+                        """.formatted(
+                        appendix.getId(),
+                        appendix.getMainContract().getContractCode(),
+                        serviceInfo.getName(),
+                        packageInfo.getName(),
+                        packageInfo.getDurationMonths(),
+                        packageInfo.getPrice(),
+                        approverId,
+                        sig.getSignedAt(),
+                        req.getSignedHash(),
+                        req.getSignatureValue()
+                );
+
+                byte[] pdfBytes = pdfBody.getBytes(StandardCharsets.UTF_8);
+
+                // 5. Save PDF
+                String pdfPath = fileStorageService.saveSignedAppendix(
+                        tenantId,
+                        appendix.getId(),
+                        pdfBytes
+                );
+
+                appendix.setAppendixPdfPath(pdfPath);
+                appendix.setAppendixStatus(AppendixStatus.APPROVED.toString());
                 serviceAppendixRepository.save(appendix);
 
+                // 6. Response
                 return ApproveAppendixResponse.builder()
                         .appendixId(appendix.getId())
-                        .status(AppendixStatus.APPROVED.name())
-                        .approverUserId(userId)
+                        .status("ACTIVE")
+                        .approvedDate(LocalDate.now())
+                        .approverUserId(approverId)
                         .build();
         }
+
+        // Endpoint xem file PDF hợp đồng và phụ lục cho cả cư dân và BQL
+        private final String basePath; // từ @Value("${file.storage.base-path}")
+        private final String serverBaseUrl; // từ @Value("${server.base-url}")
+        
+        //phuong thức lấy danh sách hợp đồng của user hiện tại
+        public List<ContractDto> getContractsForCurrentUser() {
+                String residentId = tenantContext.getResidentId();
+                String tenantId = tenantContext.getTenantId();
+                List<MainContract> contracts;
+
+                if (residentId != null) { // Cư dân
+                        contracts = mainContractRepository.findByResidentId(residentId);
+                } else if (tenantId != null) { // BQL
+                        contracts = mainContractRepository.findByTenantId(tenantId);
+                } else {
+                        throw new AccessDeniedException("Không có quyền truy cập");
+                }
+
+                List<ContractDto> dtoList = new ArrayList<>();
+                        for (MainContract contract : contracts) {
+                        List<ServiceAppendix> appendices;
+                        if (residentId != null) {
+                                appendices = serviceAppendixRepository.findByMainContractIdAndResidentId(contract.getId(), residentId);
+                        } else {
+                                appendices = serviceAppendixRepository.findByMainContract_Id(contract.getId());
+                        }
+                        ContractDto dto = ContractDto.from(contract, appendices, serverBaseUrl);
+                        dtoList.add(dto);
+                }
+
+                return dtoList; // thêm return
+        }
+
+
+        //Phương thức lấy file PDF hợp đồng hoặc phụ lục
+        public Resource getContractPdf(String contractId) throws IOException {
+                MainContract contract = mainContractRepository.findById(contractId)
+                        .orElseThrow(() -> new RuntimeException("Contract not found"));
+                Path filePath = Paths.get(basePath).resolve(contract.getPdfFilePath());
+                if (!Files.exists(filePath)) throw new RuntimeException("PDF file not found");
+                return new UrlResource(filePath.toUri());
+        }
+
+        //Phương thức lấy file PDF phụ lục
+        public Resource getAppendixPdf(String appendixId) throws IOException {
+                ServiceAppendix appendix = serviceAppendixRepository.findById(appendixId)
+                        .orElseThrow(() -> new RuntimeException("Appendix not found"));
+
+                if (appendix.getAppendixPdfPath() == null) {
+                        throw new RuntimeException("Appendix is not approved or has no PDF");
+                }
+
+                Path filePath = Paths.get(appendix.getAppendixPdfPath()); // <-- IMPORTANT: absolute path
+
+                if (!Files.exists(filePath)) {
+                        throw new RuntimeException("PDF file not found");
+                }
+
+                return new UrlResource(filePath.toUri());
+        }
+
 
     // Phương thức hỗ trợ tạo mã hợp đồng
     private String generateContractCode(String tenantId) {
