@@ -1,5 +1,7 @@
 package com.example.contract_service.controller;
 
+import com.example.contract_service.dto.ApproveAppendixRequest;
+import com.example.contract_service.dto.ApproveAppendixResponse;
 import com.example.contract_service.dto.ContractDto;
 import com.example.contract_service.dto.ContractUploadRequest;
 import com.example.contract_service.dto.MainContractResponse;
@@ -83,15 +85,6 @@ public class ContractController {
     }
 
 
-    //endpoint đăng ký phụ lục dịch vụ
-    @PostMapping("/annex")
-    public ResponseEntity<ServiceAppendixResponse> registerServiceAppendix(
-            @RequestBody ServiceAppendixRequest request
-    ) {
-        return ResponseEntity.status(201)
-                .body(contractService.registerServiceAppendix(request));
-    }
-
     // Các endpoint lấy dữ liệu hợp đồng và phụ lục
     @GetMapping("/common")
     public ResponseEntity<List<MainContractResponse>> getAllMainContracts() {
@@ -114,11 +107,21 @@ public class ContractController {
     }
 
     //endpoint đăng ký và ký phụ lục hợp đồng
-    @PostMapping("/contract/appendix/register")
+    @PostMapping("/appendix/register")
     public ResponseEntity<RegisterAppendixResponse> registerAppendix(
             @RequestBody RegisterAndSignAppendixRequest req) {
         return ResponseEntity.ok(contractService.registerAndSignAppendix(req));
     }
+
+    //endpoint phê duyệt phụ lục hợp đồng
+    @PostMapping("/appendix/approve")
+    public ResponseEntity<ApproveAppendixResponse> approveAppendix(
+            @RequestBody ApproveAppendixRequest request
+    ) {
+        ApproveAppendixResponse response = contractService.approveAppendix(request);
+        return ResponseEntity.ok(response);
+    }
+
 
     // Endpoint xem file PDF hợp đồng
    @GetMapping

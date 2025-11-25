@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 
-@FeignClient(name = "service-catalog-service", path = "/catalog/internal")
+@FeignClient(name = "service-catalog-service", path = "/internal")
 public interface CatalogClient {
 
     @GetMapping("/service/{serviceId}")
@@ -19,5 +19,6 @@ public interface CatalogClient {
         @PathVariable String packageId
     );
 }
+//
 
 

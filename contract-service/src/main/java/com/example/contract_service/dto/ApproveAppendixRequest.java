@@ -12,7 +12,6 @@ public class ApproveAppendixRequest {
     private String action;
 
     // Chỉ required khi APPROVE
-    private String signedHash;
     private String signatureValue;
 
     // Chỉ required khi REJECT

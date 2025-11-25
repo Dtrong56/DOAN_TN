@@ -1,0 +1,14 @@
+# 1. Tạo file data.txt với nội dung JSON
+'{"serviceId":"f109b5a6-019d-4069-872e-f919cf95f0eb","packageId":"37686f5f-25a2-4f3a-9eb2-48c66783bda8"}' | Out-File -FilePath data.txt -Encoding utf8
+
+# 2. Tạo signedHash (SHA256 hash của data.txt, encode base64)
+openssl dgst -sha256 -binary data.txt | openssl base64 -A > signedHash.txt
+
+# 3. Tạo chữ ký nhị phân từ private.pem
+openssl dgst -sha256 -sign private.pem -out signature.bin data.txt
+
+# 4. Encode chữ ký sang Base64 để gửi đi (signatureValue)
+openssl base64 -in signature.bin -out signatureValue.txt -A
+
+# 5. Verify chữ ký bằng public.pem
+openssl dgst -sha256 -verify public.pem -signature signature.bin data.txt

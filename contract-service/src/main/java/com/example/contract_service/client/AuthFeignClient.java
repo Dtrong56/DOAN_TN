@@ -9,10 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@FeignClient(name = "auth-service")
+@FeignClient(name = "auth-service", path = "/auth")
 public interface AuthFeignClient {
 
-   @GetMapping("/auth/internal/digital-signature/{userId}")
+   @GetMapping("/digital-signature/{userId}")
     DigitalSignatureInternalDTO getDigitalSignature(@PathVariable("userId") String userId);
 
 }
+//

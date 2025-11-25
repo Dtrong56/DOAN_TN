@@ -21,7 +21,7 @@ public class InternalServiceCatalogServiceController {
     private final ServicePackageRepository servicePackageRepository;
     
     //endpoint Contract-service validate serviceId.
-    @GetMapping("/internal/service/{serviceId}")
+    @GetMapping("/{serviceId}")
     public ResponseEntity<ServiceInfoDTO> getServiceInfo(@PathVariable String serviceId) {
         ServiceCatalog svc = serviceCatalogRepository.findById(serviceId)
                 .orElseThrow(() -> new RuntimeException("Service not found"));
@@ -46,7 +46,7 @@ public class InternalServiceCatalogServiceController {
     // Lấy price, durationMonths
 
     // Kiểm tra package active
-    @GetMapping("/internal/service/{serviceId}/package/{packageId}")
+    @GetMapping("/{serviceId}/package/{packageId}")
     public ResponseEntity<PackageInfoDTO> getPackageInfo(
             @PathVariable String serviceId,
             @PathVariable String packageId

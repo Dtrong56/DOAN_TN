@@ -106,7 +106,7 @@ public class AuthService {
                 // Cư dân → gọi resident-service để lấy tenantId
                 resp = residentClient.getTenantIdByResident(user.getId());
                 tenantId = resp.get("tenantId").toString();
-                residentId = resp.get("residentId").toString();
+                residentId = resp.get("residentProfileId").toString();
             }
             // ADMIN → bỏ qua tenantId (Super Admin toàn hệ thống)
         } catch (Exception ex) {
@@ -238,34 +238,32 @@ public class AuthService {
     /**
      * Đổi mật khẩu cho user.
      */
-    @Transactional
+   @Transactional
     public ChangePasswordResponse changePassword(String userId, ChangePasswordRequest request) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Lấy credential mới nhất
+        // Lấy credential hiện tại (LUÔN phải là unique)
         Credential credential = credentialRepository.findByUserId(userId)
-        .orElseThrow(() -> new RuntimeException("Credential not found"));
+                .orElseThrow(() -> new RuntimeException("Credential not found"));
 
-
+        // Kiểm tra old password
         if (!passwordEncoder.matches(request.getOldPassword(), credential.getHashedPassword())) {
             throw new RuntimeException("Old password is incorrect");
         }
 
-        // Tạo credential mới (không sửa credential cũ → để phục vụ tracking)
-        Credential newCred = new Credential();
-        newCred.setUser(user);
-        newCred.setHashedPassword(passwordEncoder.encode(request.getNewPassword()));
-        newCred.setLastPasswordChange(Instant.now());
-        credentialRepository.save(newCred);
+        // ✔ Update mật khẩu mới vào credential hiện tại
+        credential.setHashedPassword(passwordEncoder.encode(request.getNewPassword()));
+        credential.setLastPasswordChange(Instant.now());
+        credentialRepository.save(credential);
 
-        // Cập nhật user
+        // ✔ Update user state
         user.setFirstLogin(false);
         user.setActive(true);
         userRepository.save(user);
 
-        // Ghi log:
+        // Log (tùy chọn)
         monitoringClient.logAction(
                 userId,
                 "CHANGE_PASSWORD",
@@ -275,9 +273,9 @@ public class AuthService {
                 null
         );
 
-
         return new ChangePasswordResponse("Password changed successfully");
     }
+
 
     /**
      * Upload digital signature for user.
@@ -350,7 +348,7 @@ public class AuthService {
                 .findActiveByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("No digital signature found for user"));
 
-        String pem = Files.readString(Path.of(sig.getCertFilePath()));
+        String pem = Files.readString(Path.of(sig.getPublicKeyPath()));
 
         return new DigitalSignatureInternalDTO(
                 pem,

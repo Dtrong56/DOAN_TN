@@ -36,7 +36,7 @@ public class SecurityConfig {
                     "/auth/create-user",
                     "/auth/update-active/**",
                     "/api/v1/auth/bulk-create-users", 
-                    "/auth/internal/digital-signature"     // 👈 thêm dòng này
+                    "/auth/digital-signature/**"     // 👈 thêm dòng này
                 ).permitAll()
                 .anyRequest().authenticated()
             )
