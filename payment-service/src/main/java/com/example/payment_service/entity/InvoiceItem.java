@@ -1,16 +1,16 @@
 package com.example.payment_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "invoice_item")
-public class InvoiceItem {
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+public class InvoiceItem extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id", nullable = false)

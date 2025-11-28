@@ -1,13 +1,19 @@
 package com.example.contract_service.client;
 
+import com.example.contract_service.dto.SystemLogDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import java.util.Map;
 
-@FeignClient(name = "monitoring-service")
+/**
+ * Feign client để gọi sang monitoring-service
+ */
+@FeignClient(name = "monitoring-service", path = "/monitor/internal")
 public interface MonitoringClient {
 
-    @PostMapping("/monitoring/logs")
-    void createLog(@RequestBody Map<String, Object> logData);
+    /**
+     * Gửi log hệ thống sang monitoring-service
+     */
+    @PostMapping("/log")
+    void createLog(@RequestBody SystemLogDTO logDTO);
 }

@@ -1,16 +1,16 @@
 package com.example.notification_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "notification")
-public class Notification {
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+public class Notification extends BaseEntity {
 
     @Column(name = "tenant_id", length = 36, nullable = false)
     private String tenantId;
@@ -36,23 +36,5 @@ public class Notification {
 
     @Column(name = "created_by_user_id", length = 36, nullable = false)
     private String createdByUserId;
-
-    // Getters & Setters
-    public String getId() { return id; }
-    public String getTenantId() { return tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-    public NotificationChannel getChannel() { return channel; }
-    public void setChannel(NotificationChannel channel) { this.channel = channel; }
-    public LocalDateTime getSentAt() { return sentAt; }
-    public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public String getCreatedByUserId() { return createdByUserId; }
-    public void setCreatedByUserId(String createdByUserId) { this.createdByUserId = createdByUserId; }
 }
 

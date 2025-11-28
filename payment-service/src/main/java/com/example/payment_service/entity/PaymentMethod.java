@@ -1,19 +1,19 @@
 package com.example.payment_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(
     name = "payment_method",
     uniqueConstraints = @UniqueConstraint(name = "uq_paymethod_tenant_code", columnNames = {"tenant_id", "method_code"})
 )
-public class PaymentMethod {
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+public class PaymentMethod extends BaseEntity {
 
     @Column(name = "tenant_id", length = 36, nullable = false)
     private String tenantId;

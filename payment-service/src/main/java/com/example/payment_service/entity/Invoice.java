@@ -1,21 +1,21 @@
 package com.example.payment_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "invoice")
-public class Invoice {
+public class Invoice extends BaseEntity {
 
     public enum Status {
         UNPAID, PAID, OVERDUE
     }
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
 
     @Column(name = "tenant_id", length = 36, nullable = false)
     private String tenantId;

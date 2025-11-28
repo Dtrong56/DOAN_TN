@@ -1,20 +1,20 @@
 package com.example.payment_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "debt_reminder_job")
-public class DebtReminderJob {
+public class DebtReminderJob extends BaseEntity {
 
     public enum Status {
         SCHEDULED, RUNNING, DONE, FAILED
     }
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
 
     @Column(name = "tenant_id", length = 36, nullable = false)
     private String tenantId;

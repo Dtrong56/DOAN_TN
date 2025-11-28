@@ -2,20 +2,18 @@ package com.example.monitoring_service.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import lombok.*;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "system_log",
        indexes = {
            @Index(name = "idx_syslog_action", columnList = "action"),
            @Index(name = "idx_syslog_tenant", columnList = "tenant_id"),
            @Index(name = "idx_syslog_user", columnList = "user_id")
        })
-public class SystemLog {
-
-    @Id
-    @Column(length = 36)
-    private String id = UUID.randomUUID().toString();
+public class SystemLog extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
@@ -49,22 +47,5 @@ public class SystemLog {
         this.objectId = objectId;
         this.description = description;
     }
-
-    // --- Getters & Setters ---
-    public String getId() { return id; }
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-    public String getTenantId() { return tenantId; }
-    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
-    public String getAction() { return action; }
-    public void setAction(String action) { this.action = action; }
-    public String getObjectType() { return objectType; }
-    public void setObjectType(String objectType) { this.objectType = objectType; }
-    public String getObjectId() { return objectId; }
-    public void setObjectId(String objectId) { this.objectId = objectId; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
 }
 
