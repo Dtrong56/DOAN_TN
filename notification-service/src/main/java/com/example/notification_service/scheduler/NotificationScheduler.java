@@ -1,7 +1,9 @@
-package com.example.notification_service.controller;
+package com.example.notification_service.scheduler;
 
 import com.example.notification_service.entity.NotificationLog;
 import com.example.notification_service.repository.NotificationLogRepository;
+import com.example.notification_service.client.AuthClient;
+import com.example.notification_service.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,6 +19,8 @@ import java.util.List;
 public class NotificationScheduler {
 
     private final NotificationLogRepository logRepo;
+    private final AuthClient authClient;
+    private final EmailService emailService;
 
     /**
      * Chạy lúc 06:00 mỗi ngày
@@ -24,6 +28,7 @@ public class NotificationScheduler {
     @Scheduled(cron = "0 0 6 * * *")
     @Transactional
     public void sendPendingNotifications() {
+
         List<NotificationLog> pendingLogs = logRepo.findAll()
                 .stream()
                 .filter(log -> log.getStatus() == NotificationLog.Status.PENDING)
@@ -36,20 +41,44 @@ public class NotificationScheduler {
 
         for (NotificationLog logEntry : pendingLogs) {
             try {
-                // TODO: gọi email service hoặc SMTP để gửi thực tế
+                String userId = logEntry.getRecipientUserId();
+
+                // 1️⃣ Lấy email từ auth-service qua Feign
+                String email = authClient.getUserEmail(userId);
+
+                if (email == null || email.isBlank()) {
+                    throw new RuntimeException("Email not found for userId=" + userId);
+                }
+
+                // 2️⃣ Gửi email bằng EmailService của bạn
+                emailService.sendEmail(
+                        email,
+                        logEntry.getNotification().getTitle(),
+                        logEntry.getNotification().getContent()
+                );
+
+                // 3️⃣ Cập nhật trạng thái
                 logEntry.setStatus(NotificationLog.Status.SENT);
                 logEntry.setSentAt(LocalDateTime.now());
                 logRepo.save(logEntry);
 
-                log.info("Sent notification {} to user {}", 
-                         logEntry.getNotification().getId(), logEntry.getRecipientUserId());
+                log.info("Sent notification {} to user {} (email={})",
+                        logEntry.getNotification().getId(),
+                        userId,
+                        email
+                );
+
             } catch (Exception ex) {
+                // 4️⃣ Lỗi → FAILED
                 logEntry.setStatus(NotificationLog.Status.FAILED);
                 logEntry.setErrorMessage(ex.getMessage());
                 logRepo.save(logEntry);
 
-                log.error("Failed to send notification {} to user {}", 
-                          logEntry.getNotification().getId(), logEntry.getRecipientUserId(), ex);
+                log.error("Failed to send notification {} to user {}: {}",
+                        logEntry.getNotification().getId(),
+                        logEntry.getRecipientUserId(),
+                        ex.getMessage()
+                );
             }
         }
 

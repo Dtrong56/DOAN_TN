@@ -27,7 +27,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/monitor/internal**").permitAll() // cho phép gọi nội bộ
+                .requestMatchers("/monitor/internal/**").permitAll() // cho phép gọi nội bộ
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt());
 

@@ -1,58 +1,42 @@
 package com.example.notification_service.controller;
 
+import com.example.notification_service.dto.InternalNotificationResponseDTO;
 import com.example.notification_service.dto.NotificationRequestDTO;
-import com.example.notification_service.entity.Notification;
-import com.example.notification_service.entity.NotificationChannel;
-import com.example.notification_service.entity.NotificationLog;
-import com.example.notification_service.repository.NotificationRepository;
-import com.example.notification_service.repository.NotificationChannelRepository;
-import com.example.notification_service.repository.NotificationLogRepository;
+import com.example.notification_service.service.InternalNotificationService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
 @RestController
-@RequestMapping("/notify/internal")
 @RequiredArgsConstructor
+@RequestMapping("/notify/internal")
 public class InternalNotificationController {
 
-    private final NotificationRepository notificationRepo;
-    private final NotificationChannelRepository channelRepo;
-    private final NotificationLogRepository logRepo;
+    private final InternalNotificationService service;
 
     @PostMapping("/notify")
-    public void createNotification(@RequestBody NotificationRequestDTO dto) {
+    public ResponseEntity<InternalNotificationResponseDTO> createNotification(
+            @RequestBody NotificationRequestDTO dto
+    ) {
         try {
-            // Tìm channel theo tenant + loại kênh
-            NotificationChannel channel = channelRepo
-                    .findByTenantIdAndActiveTrue(dto.getTenantId())
-                    .stream()
-                    .filter(ch -> ch.getChannelCode().equalsIgnoreCase(dto.getChannelType()))
-                    .findFirst()
-                    .orElse(null);
+            String notificationId = service.createNotification(dto);
 
-            Notification notification = new Notification();
-            notification.setTenantId(dto.getTenantId());
-            notification.setTitle(dto.getTitle());
-            notification.setContent(dto.getMessage());
-            notification.setType(dto.getType());
-            notification.setChannel(channel);
-            notification.setCreatedByUserId(dto.getUserId());
+            return ResponseEntity.ok(
+                    InternalNotificationResponseDTO.builder()
+                            .success(true)
+                            .notificationId(notificationId)
+                            .message("Notification created successfully")
+                            .build()
+            );
 
-            notificationRepo.save(notification);
-
-            NotificationLog log = new NotificationLog();
-            log.setNotification(notification);
-            log.setRecipientUserId(dto.getUserId());
-            log.setChannel(channel);
-            log.setStatus(NotificationLog.Status.PENDING);
-
-            logRepo.save(log);
-
-            // log.info("Created notification {} for tenant {}", notification.getId(), dto.getTenantId());
         } catch (Exception ex) {
-            log.error("Failed to create notification for tenant {}", dto.getTenantId(), ex);
+            return ResponseEntity.internalServerError().body(
+                    InternalNotificationResponseDTO.builder()
+                            .success(false)
+                            .notificationId(null)
+                            .message("Failed: " + ex.getMessage())
+                            .build()
+            );
         }
     }
 }

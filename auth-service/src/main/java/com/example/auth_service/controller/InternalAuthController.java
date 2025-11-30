@@ -120,4 +120,13 @@ public class InternalAuthController {
         return ResponseEntity.ok(authService.getDigitalSignatureInternal(userId));
     }
 
+    /**
+     * API nội bộ: lấy email theo userId
+     */
+    @GetMapping("/email/{userId}")
+    public String getUserEmail(@PathVariable("userId") String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        return user.getEmail();
+    }
 }
