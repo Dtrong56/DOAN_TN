@@ -43,4 +43,7 @@ public class AppendixHistory extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String note;
+
+    @Column(columnDefinition = "TEXT")
+    private String pdfPath;
 }

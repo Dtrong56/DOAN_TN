@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class JwtService {
@@ -53,6 +52,11 @@ public class JwtService {
     // ✅ Lấy tenantId
     public String extractTenantId(String token) {
         return (String) parseClaims(token).get("tenantId");
+    }
+
+    // ✅ Lấy residentId
+    public String extractResidentId(String token) {
+        return (String) parseClaims(token).get("residentId");
     }
 
     // ✅ Lấy danh sách roles

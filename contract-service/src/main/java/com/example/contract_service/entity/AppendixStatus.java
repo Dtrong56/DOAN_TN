@@ -5,6 +5,7 @@ public enum AppendixStatus {
     APPROVED,
     REJECTED,
     CANCELLED,
-    EXPIRED
+    EXPIRED,
+    PENDING_EXTENSION
 }
 

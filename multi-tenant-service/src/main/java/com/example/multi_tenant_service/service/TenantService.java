@@ -1,12 +1,13 @@
 package com.example.multi_tenant_service.service;
 
 import com.example.multi_tenant_service.client.AuthClient;
+import com.example.multi_tenant_service.client.MonitoringClient;
+import com.example.multi_tenant_service.security.TenantContext;
 import com.example.multi_tenant_service.dto.CreateUserRequest;
 import com.example.multi_tenant_service.dto.CreateUserResponse;
 import com.example.multi_tenant_service.dto.TenantCreateRequest;
 import com.example.multi_tenant_service.dto.TenantResponse;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.core.Authentication;
+import com.example.multi_tenant_service.dto.SystemLogDTO;
 import com.example.multi_tenant_service.entity.*;
 import com.example.multi_tenant_service.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,20 +15,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
 import jakarta.transaction.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import java.text.Normalizer;
-import java.util.Locale;
-import java.util.Random;
-
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
 
 
 @Slf4j
@@ -43,28 +38,13 @@ public class TenantService {
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
     private final TenantStatusHistoryRepository tenantStatusHistoryRepository;
-    
-
-    // @Autowired
-    // public TenantService(
-    //         TenantRepository tenantRepository,
-    //         TenantConfigRepository tenantConfigRepository,
-    //         ManagementAccountRepository managementAccountRepository,
-    //         ManagementProfileRepository managementProfileRepository,
-    //         AuthClient authClient,
-    //         RabbitTemplate rabbitTemplate,
-    //         ObjectMapper objectMapper) {
-    //     this.tenantRepository = tenantRepository;
-    //     this.tenantConfigRepository = tenantConfigRepository;
-    //     this.managementAccountRepository = managementAccountRepository;
-    //     this.managementProfileRepository = managementProfileRepository;
-    //     this.authClient = authClient;
-    //     this.rabbitTemplate = rabbitTemplate;
-    //     this.objectMapper = objectMapper;
-    // }
+    private final MonitoringClient monitoringClient;
+    private final TenantContext tenantContext;
 
     @Transactional
     public TenantResponse createTenant(TenantCreateRequest request) {
+        //Lấy thông tin từ jwt token
+        String userID = tenantContext.getUserId();
 
         // 1️⃣ Tạo Tenant
         Tenant tenant = new Tenant();
@@ -153,6 +133,28 @@ public class TenantService {
             tenantConfigRepository.save(def);
         }
 
+        //ghi log tạo tenant tới monitoring service
+        try {
+            monitoringClient.createLog(
+                    new SystemLogDTO(
+                            LocalDateTime.now(),
+                            userID,
+                            savedTenant.getId(),
+                            "ADMIN",
+                            "CREATE_TENANT",
+                            "Tenant",
+                            savedTenant.getId(),
+                            "Created tenant with ID " + savedTenant.getId(),
+                            Map.of("tenantName", savedTenant.getName()),
+                            "TenantService",
+                            "createTenant",
+                            null
+                    )
+            );
+        } catch (Exception e) {
+            log.error("Failed to send system log to monitoring service: {}", e.getMessage());
+        }
+
         // 6️⃣ Ghi log (RabbitMQ)
         publishSystemLog("CREATE_TENANT", savedTenant.getId(),
                 "Tenant created with auto-generated manager account: " + username);
@@ -196,6 +198,28 @@ public class TenantService {
 
         publishSystemLog("UPDATE_TENANT_STATUS", tenant.getId(),
                 "Tenant status changed to " + tenant.getStatus());
+
+        //ghi log thay đổi trạng thái tenant tới monitoring service
+        try {
+            monitoringClient.createLog(
+                    new SystemLogDTO(
+                            LocalDateTime.now(),
+                            changedByUserId,
+                            tenant.getId(),
+                            "ADMIN",
+                            "UPDATE_TENANT_STATUS",
+                            "Tenant",
+                            tenant.getId(),
+                            "Updated tenant status to " + tenant.getStatus(),
+                            Map.of("newStatus", tenant.getStatus().name()),
+                            "TenantService",
+                            "updateTenantStatus",
+                            null
+                    )
+            );
+        } catch (Exception e) {
+            log.error("Failed to send system log to monitoring service: {}", e.getMessage());
+        }
 
         return TenantResponse.fromEntity(tenant, account.getUserId());
     }

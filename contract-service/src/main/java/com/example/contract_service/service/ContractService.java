@@ -6,7 +6,7 @@ import com.example.contract_service.client.ResidentClient;
 import com.example.contract_service.dto.ApproveAppendixRequest;
 import com.example.contract_service.dto.ApproveAppendixResponse;
 import com.example.contract_service.dto.ContractDto;
-// import com.example.contract_service.client.MonitoringClient;
+import com.example.contract_service.client.MonitoringClient;
 import com.example.contract_service.dto.ContractUploadRequest;
 import com.example.contract_service.dto.DigitalSignatureInternalDTO;
 import com.example.contract_service.dto.MainContractResponse;
@@ -79,12 +79,10 @@ public class ContractService {
     private final MainContractRepository mainContractRepository;
     private final TenantContext tenantContext;
     private final ServiceAppendixRepository serviceAppendixRepository;
-    private final FileStorageService fileStorageService;
-    private final SignatureRecordRepository signatureRecordRepository;  
     private final AppendixHistoryRepository appendixHistoryRepository;
-    private final PdfGeneratorService pdfGenerator;
-    
-    // private final MonitoringClient monitoringClient;
+    private final FileStorageService fileStorageService;
+    private final SignatureRecordRepository signatureRecordRepository;
+    private final MonitoringClient monitoringClient;
 
 
     /*
@@ -116,15 +114,23 @@ public class ContractService {
 
         mainContractRepository.save(contract);
 
-        // (Tạm comment log monitoring)
-        // Map<String, Object> log = new HashMap<>();
-        // log.put("userId", userId);
-        // log.put("tenantId", tenantId);
-        // log.put("action", "CREATE_CONTRACT");
-        // log.put("objectType", "MainContract");
-        // log.put("objectId", contract.getId());
-        // log.put("description", "Upload hợp đồng vận hành chung");
-        // monitoringClient.createLog(log);
+        // Gọi MonitoringClient ghi log lịch sử upload hợp đồng 
+        monitoringClient.createLog(
+                new com.example.contract_service.dto.SystemLogDTO(
+                        LocalDateTime.now(),
+                        userId,
+                        tenantId,
+                        "ADMIN",
+                        "UPLOAD_CONTRACT",
+                        "Contract",
+                        contract.getId(),
+                        "Uploaded new common contract with code " + contract.getContractCode(),
+                        null,
+                        "ContractService",
+                        "/contracts/upload",
+                        null
+                )
+        );
 
         return MainContractResponse.builder()
                 .id(contract.getId())
@@ -190,7 +196,6 @@ public class ContractService {
 
     public List<ServiceAppendixResponse> getAppendicesByResident() {
         String residentId = tenantContext.getUserId();
-        String tenantId = tenantContext.getTenantId();
         return serviceAppendixRepository.findAll().stream()
                 .filter(a -> a.getResidentId().equals(residentId))
                 .map(a -> ServiceAppendixResponse.builder()
@@ -321,7 +326,15 @@ public class ContractService {
 
         signatureRecordRepository.save(record);
 
-        // 10. Trả response
+        // 10. Tạo bản lịch sử đầu tiên (version 1)
+        createHistory(
+                appendix,
+                "REGISTERED",
+                null, // UC07 chưa tạo PDF
+                "Resident registered and signed appendix"
+        );
+
+        // 11.Trả response
         return RegisterAppendixResponse.builder()
                 .appendixId(appendix.getId())
                 .serviceId(req.getServiceId())
@@ -376,6 +389,24 @@ public class ContractService {
                                 .approverUserId(approverId)
                                 .build();
                 }
+
+                //Feign call tới monitoring-service để ghi log từ chối phụ lục
+                monitoringClient.createLog(
+                        new com.example.contract_service.dto.SystemLogDTO(
+                                LocalDateTime.now(),
+                                approverId,
+                                tenantId,
+                                "MANAGER",
+                                "REJECT_APPENDIX",
+                                "ServiceAppendix",
+                                appendix.getId(),
+                                "Rejected service appendix with reason: " + req.getRejectReason(),
+                                null,
+                                "ContractService",
+                                "/appendices/approve",
+                                null
+                        )
+                );
 
                 // CASE 2: APPROVE
                 System.out.println("Case 2: APPROVE!");
@@ -477,6 +508,32 @@ public class ContractService {
 
                 System.out.println("case 2 - DONE");
 
+                //8. Feign call tới monitoring-service để ghi log phê duyệt phụ lục
+                monitoringClient.createLog(
+                        new com.example.contract_service.dto.SystemLogDTO(
+                                LocalDateTime.now(),
+                                approverId,
+                                tenantId,
+                                "MANAGER",
+                                "APPROVE_APPENDIX",
+                                "ServiceAppendix",
+                                appendix.getId(),
+                                "Approved service appendix.",
+                                null,
+                                "ContractService",
+                                "/appendices/approve",
+                                null
+                        )
+                );
+
+                // 9. Ghi history (version 2)
+                createHistory(
+                        appendix,
+                        "APPROVED",
+                        pdfPath,
+                        "Manager approved appendix"
+                );
+
                 return ApproveAppendixResponse.builder()
                         .appendixId(appendix.getId())
                         .status("ACTIVE")
@@ -546,6 +603,51 @@ public class ContractService {
 
                 return new UrlResource(filePath.toUri());
         }
+
+        /**
+         * Tạo lịch sử thay đổi phụ lục
+         * @param appendix
+         * @param changeType
+         * @param pdfPath
+         * @param note
+         */
+        @Transactional
+    public void createHistory(
+            ServiceAppendix appendix,
+            String changeType,
+            String pdfPath,
+            String note
+    ) {
+        // Lấy version hiện tại
+        long count = appendixHistoryRepository
+                .countByServiceAppendixId(appendix.getId());
+
+        int nextVersion = (int) count + 1;
+
+        AppendixHistory history = AppendixHistory.builder()
+                .serviceAppendix(appendix)
+                .versionNo(nextVersion)
+                .changeType(changeType)
+                .changedByUserId(tenantContext.getUserId())
+                .changedAt(LocalDateTime.now())
+
+                // Old/new — lần đầu đăng ký thì để null các old
+                .oldEffectiveDate(null)
+                .newEffectiveDate(appendix.getEffectiveDate())
+
+                .oldExpirationDate(null)
+                .newExpirationDate(appendix.getExpirationDate())
+
+                .oldPackageId(null)
+                .newPackageId(appendix.getPackageId())
+
+                .note(note)
+                .pdfPath(pdfPath)
+
+                .build();
+
+        appendixHistoryRepository.save(history);
+    }
 
 
     // Phương thức hỗ trợ tạo mã hợp đồng
