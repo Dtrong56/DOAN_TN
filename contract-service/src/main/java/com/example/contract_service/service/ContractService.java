@@ -620,7 +620,7 @@ public class ContractService {
     ) {
         // Lấy version hiện tại
         long count = appendixHistoryRepository
-                .countByServiceAppendixId(appendix.getId());
+                .countByServiceAppendix_Id(appendix.getId());
 
         int nextVersion = (int) count + 1;
 

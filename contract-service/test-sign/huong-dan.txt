@@ -12,3 +12,32 @@ openssl base64 -in signature.bin -out signatureValue.txt -A
 
 # 5. Verify chữ ký bằng public.pem
 openssl dgst -sha256 -verify public.pem -signature signature.bin data.txt
+
+
+
+# Nội dung JSON đúng chuẩn
+$json = '{"appendixId":"06d944a7-f16c-40ea-aac4-fe8cfc9a4de9","action":"APPROVE"}'
+
+# Ghi ra file data.txt với UTF-8 không BOM, không thêm newline cuối
+[System.IO.File]::WriteAllText("data.txt", $json, (New-Object System.Text.UTF8Encoding($false)))
+
+# Ký bằng private.pem
+openssl dgst -sha256 -sign private.pem -out signature.bin data.txt
+
+# Encode chữ ký sang Base64
+openssl base64 -in signature.bin -out signatureValue.txt -A
+
+openssl dgst -sha256 -verify public.pem -signature signature.bin data.txt
+
+
+# Sau khi đã tạo signature.bin bằng OpenSSL:
+# openssl dgst -sha256 -sign private.pem -out signature.bin data.txt
+
+# Đọc nhị phân chữ ký
+$signatureBytes = [System.IO.File]::ReadAllBytes("signature.bin")
+
+# Encode sang Base64 chuẩn
+$signatureValue = [Convert]::ToBase64String($signatureBytes)
+
+# In ra để copy vào DTO
+Write-Output $signatureValue

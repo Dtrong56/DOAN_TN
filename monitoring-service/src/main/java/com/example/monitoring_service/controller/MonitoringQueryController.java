@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/monitoring/internal")
+@RequestMapping("/monitoring")
 @RequiredArgsConstructor
 public class MonitoringQueryController {
 

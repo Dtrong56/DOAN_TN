@@ -1,1 +1,1 @@
-{"serviceId":"f109b5a6-019d-4069-872e-f919cf95f0eb","packageId":"37686f5f-25a2-4f3a-9eb2-48c66783bda8"}
+{"appendixId":"06d944a7-f16c-40ea-aac4-fe8cfc9a4de9","action":"APPROVE"}

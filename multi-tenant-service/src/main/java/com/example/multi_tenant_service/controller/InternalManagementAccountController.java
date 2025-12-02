@@ -17,7 +17,7 @@ public class InternalManagementAccountController {
 
     /**
      * API nội bộ dùng cho AuthService:
-     * Trả về tenantId và thông tin cơ bản của BQL theo userId.
+     * Trả về tenantId và thông tin cơ bản của BQL theo userId..
      */
     @GetMapping("/by-user/{userId}")
     public ResponseEntity<ManagementAccountResponse> getTenantByUser(@PathVariable UUID userId) {

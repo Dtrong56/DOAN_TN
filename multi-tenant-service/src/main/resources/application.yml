@@ -22,7 +22,7 @@ spring:
   cloud:
     openfeign:
       discovery:
-        enabled: true  # 👈 Cho phép Feign dùng tên service từ Eureka
+        enabled: true  # 👈 Cho phép Feign dùng tên service từ Eureka /
       httpclient:
         enabled: true
       okhttp:

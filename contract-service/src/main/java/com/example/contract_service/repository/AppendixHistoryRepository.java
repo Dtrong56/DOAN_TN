@@ -9,8 +9,12 @@ import java.util.Optional;
 
 public interface AppendixHistoryRepository extends JpaRepository<AppendixHistory, String> {
     List<AppendixHistory> findByServiceAppendix_IdOrderByVersionNoDesc(String appendixId);
+
     Optional<AppendixHistory> findTopByServiceAppendixOrderByVersionNoDesc(ServiceAppendix appendix);
+
     Optional<AppendixHistory> findTopByServiceAppendixAndChangeTypeOrderByChangedAtDesc(ServiceAppendix appendix, String changeType);
-    Optional<ServiceAppendix> findPendingExtensionByAppendixId(String id);
-    long countByServiceAppendixId(String id);
+
+    Optional<AppendixHistory> findPendingExtensionByServiceAppendix_Id(String appendixId);
+
+    long countByServiceAppendix_Id(String appendixId);
 }

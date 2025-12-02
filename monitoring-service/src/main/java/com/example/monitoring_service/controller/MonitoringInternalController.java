@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("monitoring/internal")
+@RequestMapping("/monitoring/internal")
 @RequiredArgsConstructor
 public class MonitoringInternalController {
 
