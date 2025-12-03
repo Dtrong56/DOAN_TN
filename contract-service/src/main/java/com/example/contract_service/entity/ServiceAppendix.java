@@ -3,6 +3,8 @@ package com.example.contract_service.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -63,6 +65,9 @@ public class ServiceAppendix extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String appendixPdfPath;
+
+    @Column(nullable = false)
+    private BigDecimal price;
 
     @Column(nullable = false, length = 30)
     private String appendixStatus;   // PENDING, SIGNED_BY_RESIDENT, WAITING_ADMIN_APPROVE, APPROVED, ACTIVE, EXPIRED, REJECTED

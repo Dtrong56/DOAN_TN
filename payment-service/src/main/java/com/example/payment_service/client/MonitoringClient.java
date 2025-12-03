@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 /**
  * Feign client để gọi sang monitoring-service
  */
-@FeignClient(name = "monitoring-service", path = "/monitor/internal")
+@FeignClient(name = "monitoring-service", path = "/monitoring/internal")
 public interface MonitoringClient {
 
     /**

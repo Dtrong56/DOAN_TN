@@ -109,6 +109,7 @@ public class ContractService {
                 .signedDate(req.getSignedDate())
                 .effectiveDate(req.getEffectiveDate())
                 .expirationDate(req.getExpirationDate())
+                .pricePerM2(req.getMonthlyFeePerM2())
                 .pdfFilePath(pdfPath)
                 .build();
 
@@ -504,6 +505,7 @@ public class ContractService {
                 System.out.println("case 2 - step 7");
                 appendix.setAppendixPdfPath(pdfPath);
                 appendix.setAppendixStatus(AppendixStatus.APPROVED.name());
+                appendix.setPrice(packageInfo.getPrice());
                 serviceAppendixRepository.save(appendix);
 
                 System.out.println("case 2 - DONE");

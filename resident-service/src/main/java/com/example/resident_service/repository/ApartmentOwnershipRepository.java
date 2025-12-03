@@ -17,5 +17,5 @@ public interface ApartmentOwnershipRepository extends JpaRepository<ApartmentOwn
     Optional<ApartmentOwnership> findActiveOwnership(@Param("apartmentId") String apartmentId);
     @Query("SELECT o FROM ApartmentOwnership o WHERE o.residentId = :residentId  AND (o.endDate IS NULL)")
     Optional<ApartmentOwnership> findActiveOwnershipByResidentId(String residentId);
-
+    List<ApartmentOwnership> findByResidentIdAndIsRepresentativeTrue(String residentId);
 }

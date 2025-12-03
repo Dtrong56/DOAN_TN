@@ -2,10 +2,8 @@ package com.example.contract_service.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "main_contract")
@@ -30,6 +28,9 @@ public class MainContract extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDate expirationDate;
+
+    @Column(nullable = false)
+    private Double pricePerM2;
 
     @Column(columnDefinition = "TEXT")
     private String pdfFilePath;
