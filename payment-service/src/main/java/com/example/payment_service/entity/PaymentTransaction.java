@@ -13,6 +13,12 @@ import java.time.LocalDateTime;
 @Table(name = "payment_transaction")
 public class PaymentTransaction extends BaseEntity {
 
+    public enum Status {
+        PENDING,
+        SUCCESS,
+        FAILED
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id", nullable = false)
     private Invoice invoice;
@@ -30,6 +36,12 @@ public class PaymentTransaction extends BaseEntity {
     @Column(name = "reference_code", length = 255)
     private String referenceCode;
 
-    // Getters & setters
+    @Column(name = "gateway_transaction_code", length = 255)
+    private String gatewayTransactionCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status = Status.PENDING;
 }
+
 
