@@ -1,5 +1,6 @@
 package com.example.payment_service.scheduler;
 
+import com.example.payment_service.client.TenantClient;
 import com.example.payment_service.service.InvoiceGenerationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,27 +15,37 @@ import java.time.LocalDate;
 public class InvoiceScheduler {
 
     private final InvoiceGenerationService invoiceGenerationService;
+    private final TenantClient tenantClient;
 
     // Chạy lúc 00:30 ngày 1 mỗi tháng
     @Scheduled(cron = "0 30 0 1 * ?")
     public void runMonthly() {
 
         LocalDate now = LocalDate.now();
-
         int month = now.minusMonths(1).getMonthValue();
         int year = now.minusMonths(1).getYear();
 
-        String tenantId = "ALL"; 
-        // Nếu bạn chạy multi-tenant có bảng tenant, bạn loop tenant list ở đây
+        log.info("InvoiceScheduler START — generating invoices for {}/{}", month, year);
 
-        log.info("Running monthly invoice scheduler for {}/{}", month, year);
+        var tenants = tenantClient.getActiveTenants();
 
-        // Ở đây giả định mỗi scheduler chạy theo tenant-cụ-thể
-        // Nếu nhiều tenants, bạn loop list tenants
-        int count = invoiceGenerationService.generateMonthlyInvoices(
-                tenantId, month, year
-        );
+        if (tenants.isEmpty()) {
+            log.warn("No active tenants found — skip scheduler.");
+            return;
+        }
 
-        log.info("Scheduler done — created {} invoices", count);
+        tenants.forEach(t -> {
+            log.info("Generating invoice for Tenant {} ({})", t.getName(), t.getId());
+
+            int count = invoiceGenerationService.generateMonthlyInvoices(
+                    t.getId(),
+                    month,
+                    year
+            );
+
+            log.info("Tenant {} — created {} invoices", t.getId(), count);
+        });
+
+        log.info("InvoiceScheduler DONE — All tenants processed");
     }
 }

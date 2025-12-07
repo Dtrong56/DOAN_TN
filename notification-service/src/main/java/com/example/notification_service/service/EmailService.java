@@ -18,7 +18,8 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    
+
+    // Gửi email thực tế qua SMTP
     public void sendEmail(String to, String subject, String content) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

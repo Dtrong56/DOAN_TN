@@ -1,10 +1,13 @@
 package com.example.payment_service.repository;
 
 import com.example.payment_service.entity.*;
+import com.example.payment_service.entity.Invoice.Status;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +21,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
     List<Invoice> findByTenantIdAndResidentIdAndPeriodYearAndPeriodMonthAndStatus(String tenantId, String residentId, int year, int month, Invoice.Status status);
 
     Optional<Invoice> findByIdAndTenantIdAndResidentId(String id, String tenantId, String residentId);
+
+    List<Invoice> findByDueDateAndStatus(LocalDate dueDate, Invoice.Status status);
+
+    List<Invoice> findByDueDateBeforeAndStatus(LocalDate date, Invoice.Status status);
 
     @Query("""
         SELECT COALESCE(SUM(i.totalAmount),0)
@@ -72,5 +79,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, String> {
                                        @Param("fromMonth") int fromMonth,
                                        @Param("toYear") int toYear,
                                        @Param("toMonth") int toMonth);
+    List<Invoice> findByStatus(Status unpaid);
 }
 

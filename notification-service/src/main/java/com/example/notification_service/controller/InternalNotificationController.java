@@ -1,6 +1,7 @@
 package com.example.notification_service.controller;
 
 import com.example.notification_service.dto.InternalNotificationResponseDTO;
+import com.example.notification_service.dto.NotificationResponseDTO;
 import com.example.notification_service.dto.NotificationRequestDTO;
 import com.example.notification_service.service.InternalNotificationService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,9 @@ public class InternalNotificationController {
 
     private final InternalNotificationService service;
 
+    /*
+     * Endpoint to create a new internal notification
+     */
     @PostMapping("/notify")
     public ResponseEntity<InternalNotificationResponseDTO> createNotification(
             @RequestBody NotificationRequestDTO dto
@@ -38,5 +42,18 @@ public class InternalNotificationController {
                             .build()
             );
         }
+    }
+
+    /*
+     * Endpoint to send an internal notification
+     */
+    @PostMapping("/send")
+    public NotificationResponseDTO sendNotification(
+            @RequestParam String tenantId,
+            @RequestParam String residentId,
+            @RequestParam String type,
+            @RequestParam String message
+    ) {
+        return service.handleInternalSend(tenantId, residentId, type, message);
     }
 }

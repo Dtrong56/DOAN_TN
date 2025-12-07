@@ -13,6 +13,12 @@ public class DirectPaymentController {
 
     private final DirectPaymentService directPaymentService;
 
+    /**
+     * Endpoint để ghi nhận thanh toán trực tiếp.
+     *
+     * @param request the direct payment request payload
+     * @return the response containing payment details
+     */
     @PostMapping
     public DirectPaymentResponse recordPayment(@RequestBody DirectPaymentRequest request) {
         return directPaymentService.recordDirectPayment(request);
