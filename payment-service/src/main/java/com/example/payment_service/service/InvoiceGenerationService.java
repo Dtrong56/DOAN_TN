@@ -2,7 +2,6 @@ package com.example.payment_service.service;
 
 import com.example.payment_service.client.OperationContractClient;
 import com.example.payment_service.client.ResidentClient;
-import com.example.payment_service.client.ServiceAppendixClient;
 import com.example.payment_service.dto.OperationContractDTO;
 import com.example.payment_service.dto.ResidentDTO;
 import com.example.payment_service.dto.ServiceAppendixDTO;
@@ -24,7 +23,6 @@ public class InvoiceGenerationService {
 
     private final ResidentClient residentClient;
     private final OperationContractClient operationContractClient;
-    private final ServiceAppendixClient serviceAppendixClient;
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepository invoiceItemRepository;
 
@@ -48,7 +46,7 @@ public class InvoiceGenerationService {
         for (ResidentDTO resident : residents) {
 
             List<ServiceAppendixDTO> appendices =
-                    serviceAppendixClient.getActiveAppendices(
+                    operationContractClient.getActiveAppendices(
                             tenantId,
                             resident.getResidentId(),
                             month,

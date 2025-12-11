@@ -1,0 +1,213 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  # ============================
+  # ✅ EUREKA SERVER
+  # ============================
+  eureka-server:
+    build: ./eureka
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  # ============================
+  # ✅ MYSQL (1 instance – nhiều schema)
+  # ============================
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: >
+      bash -c "
+      echo 'CREATE DATABASE IF NOT EXISTS auth_service;
+            CREATE DATABASE IF NOT EXISTS contract_service;
+            CREATE DATABASE IF NOT EXISTS monitoring_service;
+            CREATE DATABASE IF NOT EXISTS tenant_service;
+            CREATE DATABASE IF NOT EXISTS notification_service;
+            CREATE DATABASE IF NOT EXISTS resident_service;
+            CREATE DATABASE IF NOT EXISTS service_catalog_service;
+            CREATE DATABASE IF NOT EXISTS payment_service;' > /docker-entrypoint-initdb.d/init.sql
+      && docker-entrypoint.sh mysqld
+      "
+
+  # ============================
+  # ✅ GATEWAY
+  # ============================
+  gateway-service:
+    build: ./gateway
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_APPLICATION_NAME: gateway-service
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_CLOUD_DISCOVERY_ENABLED: true
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: true
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - eureka-server
+  
+
+  # ============================
+  # ✅ AUTH SERVICE
+  # ============================
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_APPLICATION_NAME: auth-service
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/auth_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+
+      # Internal service URLs
+      SERVICES_RESIDENT_URL: http://resident-service:8083
+      SERVICES_TENANT_URL: http://multi-tenant-service:8082
+      SERVICES_MONITORING_URL: http://monitoring-service:8088
+      SERVICES_NOTIFICATION_URL: http://notification-service:8087
+    depends_on:
+      - db
+      - eureka-server
+
+  # ============================
+  # ✅ RESIDENT SERVICE
+  # ============================
+  resident-service:
+    build: ./resident-service
+    container_name: resident-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/resident_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - db
+      - eureka-server
+
+  # ============================
+  # ✅ MULTI-TENANT SERVICE
+  # ============================
+  multi-tenant-service:
+    build: ./multi-tenant-service
+    container_name: multi-tenant-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tenant_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - db
+      - eureka-server
+
+  # ============================
+  # ✅ MONITORING SERVICE
+  # ============================
+  monitoring-service:
+    build: ./monitoring-service
+    container_name: monitoring-service
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/monitoring_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - db
+      - eureka-server
+
+  # ============================
+  # ✅ NOTIFICATION SERVICE
+  # ============================
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/notification_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - db
+      - eureka-server
+
+  # ============================
+  # ✅ CONTRACT SERVICE
+  # ============================
+  contract-service:
+    build: ./contract-service
+    container_name: contract-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/contract_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - db
+      - eureka-server
+
+  # ============================
+  # ✅ PAYMENT SERVICE
+  # ============================
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/payment_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - db
+      - eureka-server
+
+  # ============================
+  # ✅ SERVICE CATALOG SERVICE
+  # ============================
+  service-catalog-service:
+    build: ./service-catalog-service
+    container_name: service-catalog-service
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/service_catalog_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JWT_SECRET: mysecretkeymysecretkeymysecretkey123
+    depends_on:
+      - db
+      - eureka-server
+
+volumes:
+  mysql_data:

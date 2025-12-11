@@ -60,6 +60,34 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader
+
+        # Notification-service route
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/notify/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - PreserveHostHeader
+        
+        # Payment-service route
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/payment/**
+            - Path=/api/**
+            - Path=/sandbox/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - PreserveHostHeader
+        # Monitoring-service route
+        - id: monitoring-service
+          uri: lb://monitoring-service
+          predicates:
+            - Path=/monitoring/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - PreserveHostHeader
       
 
 eureka:
@@ -79,4 +107,3 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty.http.client: DEBUG
-

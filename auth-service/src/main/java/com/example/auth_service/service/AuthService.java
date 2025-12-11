@@ -8,6 +8,7 @@ import com.example.auth_service.dto.CreateUserResponse;
 import com.example.auth_service.dto.DigitalSignatureInternalDTO;
 import com.example.auth_service.dto.JwtResponse;
 import com.example.auth_service.dto.LoginRequest;
+import com.example.auth_service.dto.SystemLogDTO;
 import com.example.auth_service.dto.UserResponse;
 import com.example.auth_service.entity.Credential;
 import com.example.auth_service.entity.User;
@@ -19,12 +20,14 @@ import com.example.auth_service.repository.RoleRepository;
 import com.example.auth_service.repository.DigitalSignatureRepository;
 import com.example.auth_service.service.FileStorageService;
 import com.example.auth_service.security.JwtService;
+import com.example.auth_service.security.TenantContext;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.auth_service.entity.Role;
 import com.example.auth_service.client.TenantClient;
 import com.example.auth_service.client.ResidentClient;
-import com.example.auth_service.integration.MonitoringClient;
+import com.example.auth_service.client.MonitoringClient;
 import com.example.auth_service.dto.DigitalSignatureUploadRequest;
 import com.example.auth_service.dto.DigitalSignatureUploadResponse;
 import com.example.auth_service.entity.DigitalSignature;
@@ -34,6 +37,7 @@ import com.example.auth_service.entity.DigitalSignature;
 
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Optional;
@@ -60,6 +64,7 @@ public class AuthService {
     private final MonitoringClient monitoringClient;
     private final FileStorageService fileStorageService;
     private final DigitalSignatureRepository digitalSignatureRepository;
+    private final TenantContext tenantContext;
 
     /**
      * Xử lý đăng nhập, xác thực username/password và sinh JWT token.
@@ -93,6 +98,7 @@ public class AuthService {
         var roles = user.getUserRoles().stream()
                 .map(ur -> ur.getRole().getName())
                 .collect(Collectors.toList());
+
 
         // 5️⃣ Xác định tenantId (nếu cần)
         String tenantId = null;
@@ -208,6 +214,7 @@ public class AuthService {
      */
     @Transactional
     public UserResponse resetBqlAccount(String targetUserId, String targetTenantId, String actionUserId) {
+        String roleName = tenantContext.getUserRoles();
 
         User user = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -223,13 +230,21 @@ public class AuthService {
         credentialRepository.save(credential);
 
         // ✅ Ghi log
-        monitoringClient.logAction(
-                actionUserId,          // user đang thao tác
-                targetTenantId,        // tenant của user bị reset → truyền từ body
-                "RESET_BQL_PASSWORD",  // action
-                "User",                // object type
-                targetUserId,          // object id
-                "Reset password to default and deactivate BQL account"
+        monitoringClient.createLog(
+            new SystemLogDTO(
+                LocalDateTime.now(),
+                tenantContext.getUserId(),
+                targetTenantId,
+                roleName,
+                "RESET_BQL_ACCOUNT",
+                "Credential",
+                credential.getId(),
+                "Reset BQL account and deactivated it",
+                null,
+                "AuthService",
+                "/api/auth/reset-bql",
+                null                
+            )
         );
 
         return new UserResponse(user.getId(), user.getUsername(), false, "Account reset successful");
@@ -240,6 +255,7 @@ public class AuthService {
      */
    @Transactional
     public ChangePasswordResponse changePassword(String userId, ChangePasswordRequest request) {
+        String tenantId = tenantContext.getTenantId();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -264,13 +280,21 @@ public class AuthService {
         userRepository.save(user);
 
         // Log (tùy chọn)
-        monitoringClient.logAction(
-                userId,
+        monitoringClient.createLog(
+            new SystemLogDTO(
+                LocalDateTime.now(),
+                tenantContext.getUserId(),
+                tenantId,
+                tenantContext.getUserRoles(),
                 "CHANGE_PASSWORD",
-                "User",
-                userId,
-                "User changed their password",
-                null
+                "Credential",
+                credential.getId(),
+                "Changed password successfully",
+                null,
+                "AuthService",
+                "/api/auth/change-password",
+                null                
+            )
         );
 
         return new ChangePasswordResponse("Password changed successfully");
@@ -285,6 +309,7 @@ public class AuthService {
 
         String publicPath;
         String certPath = null;
+        String tenantId = tenantContext.getTenantId();
 
         try {
             // Lưu file public key
@@ -316,13 +341,21 @@ public class AuthService {
 
         digitalSignatureRepository.save(ds);
 
-        monitoringClient.logAction(
-                userId,
+        monitoringClient.createLog(
+            new SystemLogDTO(
+                LocalDateTime.now(),
+                tenantContext.getUserId(),
+                tenantId,
+                "Resident",
                 "UPLOAD_DIGITAL_SIGNATURE",
-                "DigitalSignature",
+                "Credential",
                 ds.getId(),
-                "User uploaded digital signature",
-                null
+                "Uploaded digital signature successfully",
+                null,
+                "AuthService",
+                "/api/auth/upload-digital-signature",
+                null                
+            )
         );
 
         return new DigitalSignatureUploadResponse(

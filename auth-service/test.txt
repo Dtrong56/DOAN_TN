@@ -1,0 +1,6 @@
+4. Build và chạy hệ thống
+- Build image: docker-compose build
+- Chạy container: docker-compose up
+5. Kiểm tra hoạt động
+- Truy cập localhost:8080 để kiểm tra service.
+- Dùng docker ps để xem container đang chạy.

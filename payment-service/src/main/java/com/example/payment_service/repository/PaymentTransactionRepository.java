@@ -14,9 +14,9 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     List<PaymentTransaction> findByInvoiceId(String invoiceId);
 
     @Query("""
-        SELECT COALESCE(SUM(t.amount),0)
+        SELECT COALESCE(SUM(t.amount), 0)
         FROM PaymentTransaction t
-        WHERE t.paymentMethod.paymentMethod != null OR t.invoice IS NOT NULL
+        WHERE (t.paymentMethod IS NOT NULL OR t.invoice IS NOT NULL)
           AND t.invoice.tenantId = :tenantId
           AND t.status = 'SUCCESS'
           AND t.transactionDate >= :from
