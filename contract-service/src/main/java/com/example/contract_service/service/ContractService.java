@@ -666,4 +666,31 @@ public class ContractService {
 
         return contractCode;
         }
+
+        //phương thức lấy danh sách phụ lục dịch vụ cần duyệt PENDING_APPROVAL hoặc PENDING_EXTENSION
+    public List<ServiceAppendixResponse> getPendingApprovalAppendices() {
+        String tenantId = tenantContext.getTenantId();
+        List<ServiceAppendix> appendices = serviceAppendixRepository.findAll().stream()
+                .filter(a -> a.getMainContract().getTenantId().equals(tenantId))
+                .filter(a -> a.getAppendixStatus().equals(AppendixStatus.PENDING_APPROVAL.name())
+                        || a.getAppendixStatus().equals(AppendixStatus.PENDING_EXTENSION.name()))
+                .toList();
+
+        List<ServiceAppendixResponse> responseList = new ArrayList<>();
+        for (ServiceAppendix a : appendices) {
+                ServiceAppendixResponse resp = ServiceAppendixResponse.builder()
+                        .id(a.getId())
+                        .mainContractId(a.getMainContract().getId())
+                        .serviceId(a.getServiceId())
+                        .packageId(a.getPackageId())
+                        .residentId(a.getResidentId())
+                        .apartmentId(a.getApartmentId())
+                        .effectiveDate(a.getEffectiveDate())
+                        .expirationDate(a.getExpirationDate())
+                        .status(a.getAppendixStatus())
+                        .build();
+                responseList.add(resp);
+        }
+        return responseList;
+    }
 }

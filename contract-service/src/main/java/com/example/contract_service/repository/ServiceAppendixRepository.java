@@ -1,11 +1,14 @@
 package com.example.contract_service.repository;
 
 import com.example.contract_service.entity.ServiceAppendix;
+import com.itextpdf.text.Element;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.List;
 
+import java.util.List;
+import java.util.Optional;
 import java.time.LocalDate;
 
 public interface ServiceAppendixRepository extends JpaRepository<ServiceAppendix, String> {
@@ -32,4 +35,6 @@ public interface ServiceAppendixRepository extends JpaRepository<ServiceAppendix
             LocalDate firstDay,
             LocalDate lastDay
     );
+
+    Optional<ServiceAppendix> findByMainContract_TenantIdAndAppendixStatus(String tenantId, String name);
 }

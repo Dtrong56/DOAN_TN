@@ -76,16 +76,19 @@ public class ContractController {
         return ResponseEntity.ok(contractService.getAllMainContracts());
     }
 
+    //endpoint lấy hợp đồng chung theo id
     @GetMapping("/common/{id}")
     public ResponseEntity<MainContractResponse> getMainContractById(@PathVariable String id) {
         return ResponseEntity.ok(contractService.getMainContractById(id));
     }
 
+    //endpoint lấy danh sách phụ lục dịch vụ theo cư dân
     @GetMapping("/annex/by-resident")
     public ResponseEntity<List<ServiceAppendixResponse>> getAppendicesByResident() {
         return ResponseEntity.ok(contractService.getAppendicesByResident());
     }
 
+    //endpoint lấy phụ lục dịch vụ theo id
     @GetMapping("/annex/{id}")
     public ResponseEntity<ServiceAppendixResponse> getAppendixById(@PathVariable String id) {
         return ResponseEntity.ok(contractService.getAppendixById(id));
@@ -139,6 +142,13 @@ public class ContractController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
+    }
+
+    //endpoint lấy danh sách phụ lục dịch vụ cần duyệt
+    @GetMapping("/appendices/pending-approval")
+    public ResponseEntity<List<ServiceAppendixResponse>> getPendingApprovalAppendices() {
+        List<ServiceAppendixResponse> appendices = contractService.getPendingApprovalAppendices();
+        return ResponseEntity.ok(appendices);
     }
 
 }
