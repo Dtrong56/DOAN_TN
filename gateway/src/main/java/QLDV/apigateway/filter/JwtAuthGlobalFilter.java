@@ -26,6 +26,9 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     @Value("${auth.service.url:http://localhost:8081}")
     private String authServiceUrl;
 
+    // @Value("${auth.service.url}")
+    // private String authServiceUrl;
+
     public JwtAuthGlobalFilter(WebClient.Builder webClientBuilder) {
         this.webClientBuilder = webClientBuilder;
     }

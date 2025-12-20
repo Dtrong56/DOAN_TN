@@ -1,0 +1,8 @@
+CREATE DATABASE IF NOT EXISTS auth_service;
+CREATE DATABASE IF NOT EXISTS contract_service;
+CREATE DATABASE IF NOT EXISTS monitoring_service;
+CREATE DATABASE IF NOT EXISTS tenant_service;
+CREATE DATABASE IF NOT EXISTS notification_service;
+CREATE DATABASE IF NOT EXISTS resident_service;
+CREATE DATABASE IF NOT EXISTS service_catalog_service;
+CREATE DATABASE IF NOT EXISTS payment_service;

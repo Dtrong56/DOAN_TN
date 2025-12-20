@@ -302,6 +302,7 @@ public class ContractService {
                 .residentId(residentId)
                 .apartmentId(apartmentId)
                 .signedDate(LocalDate.now())
+                .signedContent(rawContent)
                 .effectiveDate(effectiveDate)
                 .expirationDate(expirationDate)
                 .appendixStatus(AppendixStatus.PENDING_APPROVAL.name())
@@ -502,6 +503,10 @@ public class ContractService {
                 appendix.setAppendixPdfPath(pdfPath);
                 appendix.setAppendixStatus(AppendixStatus.APPROVED.name());
                 appendix.setPrice(packageInfo.getPrice());
+                appendix.setAdminSignature(req.getSignatureValue());
+                appendix.setAdminApprovedAt(LocalDateTime.now());
+                appendix.setAdminUserId(approverId);
+                appendix.setSignedContent(rawContent);
                 serviceAppendixRepository.save(appendix);
 
                 System.out.println("case 2 - DONE");

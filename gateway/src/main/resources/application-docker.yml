@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+auth:
+  service:
+    url: http://auth-service:8081
+
 spring:
   application:
     name: gateway-service
@@ -14,6 +18,7 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
+          prefer-service-host: true
       routes:
         # Auth-service route
         - id: auth-service
@@ -41,8 +46,7 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader
-            - StripPrefix=0
-        
+
         # Service-catalog-service route
         - id: service-catalog-service
           uri: lb://service-catalog-service
@@ -69,7 +73,7 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader
-        
+
         # Payment-service route
         - id: payment-service
           uri: lb://payment-service
@@ -80,6 +84,7 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader
+
         # Monitoring-service route
         - id: monitoring-service
           uri: lb://monitoring-service
@@ -88,17 +93,17 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - PreserveHostHeader
-      
+
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
   instance:
-    prefer-ip-address: true
-    instance-id: ${spring.cloud.client.ip-address}:${server.port}
+    hostname: gateway-service
+    prefer-ip-address: false
 
 jwt:
   secret: mysecretkeymysecretkeymysecretkey123
@@ -107,3 +112,5 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty.http.client: DEBUG
+
+

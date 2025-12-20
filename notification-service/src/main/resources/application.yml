@@ -30,8 +30,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: your_email@gmail.com
-    password: your_app_password   # app password, không dùng password gmail thật
+    username: trvu2277@gmail.com
+    password: ogkfhqotrnydkabj   # app password, không dùng password gmail thật
     properties:
       mail:
         smtp:
