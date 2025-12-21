@@ -1,8 +1,11 @@
 package com.example.monitoring_service.common;
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 
 @Configuration
 public class RabbitConfig {
@@ -25,4 +28,20 @@ public class RabbitConfig {
     public Binding logBinding(Queue logQueue, DirectExchange logExchange) {
         return BindingBuilder.bind(logQueue).to(logExchange).with(LOG_ROUTING_KEY);
     }
+
+    // Khai báo converter dùng Jackson để serialize object -> JSON
+    @Bean
+    public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    // Khai báo RabbitTemplate với converter JSON
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
+                                         Jackson2JsonMessageConverter converter) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(converter);
+        return template;
+    }
+
 }

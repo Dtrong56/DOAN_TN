@@ -1,5 +1,8 @@
 package com.example.auth_service.dto;
 
+import lombok.Data;
+
+@Data
 public class UserResponse {
     private String userId;
     private String username;
@@ -13,5 +16,5 @@ public class UserResponse {
         this.message = message;
     }
 
-    // getters & setters
+    public UserResponse() {} // thêm constructor rỗng
 }

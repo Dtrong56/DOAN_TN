@@ -222,7 +222,8 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Khóa account
-        user.setActive(false);
+        user.setActive(true);
+        user.setFirstLogin(true);
         userRepository.save(user);
 
         // Reset mật khẩu
