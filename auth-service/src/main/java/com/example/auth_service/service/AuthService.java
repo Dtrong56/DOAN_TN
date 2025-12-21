@@ -31,6 +31,7 @@ import com.example.auth_service.client.MonitoringClient;
 import com.example.auth_service.dto.DigitalSignatureUploadRequest;
 import com.example.auth_service.dto.DigitalSignatureUploadResponse;
 import com.example.auth_service.entity.DigitalSignature;
+import com.example.auth_service.publisher.LogPublisher;
 
 
 
@@ -65,6 +66,7 @@ public class AuthService {
     private final FileStorageService fileStorageService;
     private final DigitalSignatureRepository digitalSignatureRepository;
     private final TenantContext tenantContext;
+    private final LogPublisher logPublisher;
 
     /**
      * Xử lý đăng nhập, xác thực username/password và sinh JWT token.
@@ -230,10 +232,26 @@ public class AuthService {
         credentialRepository.save(credential);
 
         // ✅ Ghi log
-        monitoringClient.createLog(
+        // monitoringClient.createLog(
+        //     new SystemLogDTO(
+        //         LocalDateTime.now(),
+        //         tenantContext.getUserId(),
+        //         targetTenantId,
+        //         roleName,
+        //         "RESET_BQL_ACCOUNT",
+        //         "Credential",
+        //         credential.getId(),
+        //         "Reset BQL account and deactivated it",
+        //         null,
+        //         "AuthService",
+        //         "/api/auth/reset-bql",
+        //         null                
+        //     )
+        // );
+        logPublisher.sendLog(
             new SystemLogDTO(
                 LocalDateTime.now(),
-                tenantContext.getUserId(),
+                actionUserId,
                 targetTenantId,
                 roleName,
                 "RESET_BQL_ACCOUNT",
@@ -242,7 +260,7 @@ public class AuthService {
                 "Reset BQL account and deactivated it",
                 null,
                 "AuthService",
-                "/api/auth/reset-bql",
+                "/api/auth/users/reset",
                 null                
             )
         );

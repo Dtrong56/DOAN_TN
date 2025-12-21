@@ -1,4 +1,4 @@
-package com.example.common;
+package com.example.auth_service.common;
 
 import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
