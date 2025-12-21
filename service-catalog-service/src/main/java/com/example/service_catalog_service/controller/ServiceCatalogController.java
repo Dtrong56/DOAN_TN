@@ -35,10 +35,9 @@ public class ServiceCatalogController {
     }
 
     //endpoint cập nhật dịch vụ
-    @PutMapping("/{serviceId}")
-    public ServiceCatalog updateService(@PathVariable String serviceId,
-                                        @RequestBody UpdateServiceRequest request) {
-        return service.updateService(serviceId, request);
+    @PutMapping("/serviceUpdate")
+    public ServiceCatalog updateService(@RequestBody UpdateServiceRequest request) {
+        return service.updateService(request);
     }
 
     //endpoint hủy kích hoạt dịch vụ

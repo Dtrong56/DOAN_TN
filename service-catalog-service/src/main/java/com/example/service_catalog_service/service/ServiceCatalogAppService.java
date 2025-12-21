@@ -66,12 +66,12 @@ public class ServiceCatalogAppService {
      * Cập nhật dịch vụ
      */
     @Transactional
-    public ServiceCatalog updateService(String serviceId, UpdateServiceRequest request) {
+    public ServiceCatalog updateService(UpdateServiceRequest request) {
 
         String tenantId = tenantContext.getTenantId();
         String userId = tenantContext.getUserId();
 
-        ServiceCatalog service = serviceCatalogRepository.findById(serviceId)
+        ServiceCatalog service = serviceCatalogRepository.findById(request.id())
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
         if (!service.getTenantId().equals(tenantId)) {
@@ -82,6 +82,7 @@ public class ServiceCatalogAppService {
         service.setName(request.name());
         service.setDescription(request.description());
         service.setUnit(request.unit());
+        service.setActive(request.active());
         serviceCatalogRepository.save(service);
 
         // Cập nhật danh sách gói
@@ -112,6 +113,8 @@ public class ServiceCatalogAppService {
                     history.setOldPrice(pkg.getPrice());
                     history.setNewPrice(pkgReq.price());
                     history.setChangedByUserId(userId);
+                    //sẽ lấy ngày hiệu lực là ngày đầu tháng sau của ngày hiện tại
+                    history.setEffectiveFrom(java.time.LocalDate.now().plusMonths(1).withDayOfMonth(1));
                     historyRepo.save(history);
                     pkg.setPrice(pkgReq.price());
                 }

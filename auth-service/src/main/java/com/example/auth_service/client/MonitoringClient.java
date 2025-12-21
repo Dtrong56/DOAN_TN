@@ -23,7 +23,7 @@ public class MonitoringClient {
      * Gửi log sang monitoring-service
      */
     public void createLog(SystemLogDTO logDTO) {
-        String url = baseUrl + "/internal/monitoring/logs";
+        String url = baseUrl + "/monitoring/internal/log";
         restTemplate.postForObject(url, logDTO, Void.class);
     }
 }
