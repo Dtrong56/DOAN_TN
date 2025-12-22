@@ -1,4 +1,4 @@
-package com.example.auth_service.common;
+package com.example.service_catalog_service.common;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

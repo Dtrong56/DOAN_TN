@@ -8,6 +8,7 @@ import com.example.multi_tenant_service.dto.CreateUserResponse;
 import com.example.multi_tenant_service.dto.TenantCreateRequest;
 import com.example.multi_tenant_service.dto.TenantResponse;
 import com.example.multi_tenant_service.dto.SystemLogDTO;
+import com.example.multi_tenant_service.dto.TenantGetDto;
 import com.example.multi_tenant_service.entity.*;
 import com.example.multi_tenant_service.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +24,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -248,8 +251,32 @@ public class TenantService {
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
     }
 
-    public List<Tenant> getAllTenants() {
-        return tenantRepository.findAll();
+    /*
+    * Lấy danh sách tất cả tenant dưới dạng DTO
+     */
+    public List<TenantGetDto> getAllTenants() {
+        return tenantRepository.findAll().stream().map(tenant -> {
+            List<String> accountIds = tenant.getManagementAccounts().stream()
+                .map(ManagementAccount::getId)
+                .collect(Collectors.toList());
+
+            List<String> profileIds = tenant.getManagementAccounts().stream()
+                .map(ManagementAccount::getProfile)
+                .filter(Objects::nonNull)
+                .map(ManagementProfile::getId)
+                .collect(Collectors.toList());
+
+            return TenantGetDto.builder()
+                .id(tenant.getId())
+                .name(tenant.getName())
+                .address(tenant.getAddress())
+                .contactName(tenant.getContactName())
+                .contactEmail(tenant.getContactEmail())
+                .status(tenant.getStatus())
+                .managementAccountIds(accountIds)
+                .managementProfileIds(profileIds)
+                .build();
+        }).collect(Collectors.toList());
     }
 
 

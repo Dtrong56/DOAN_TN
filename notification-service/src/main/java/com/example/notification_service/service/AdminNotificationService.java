@@ -2,6 +2,7 @@ package com.example.notification_service.service;
 
 import com.example.notification_service.client.AuthClient;
 import com.example.notification_service.client.MonitoringClient;
+import com.example.notification_service.publisher.*;
 import com.example.notification_service.dto.AdminSendNotificationRequestDTO;
 import com.example.notification_service.dto.AdminSendNotificationResponseDTO;
 import com.example.notification_service.dto.SystemLogDTO;
@@ -31,6 +32,7 @@ public class AdminNotificationService {
     private final AuthClient authClient;
     private final EmailService emailService;
     private final MonitoringClient monitoringClient; // <-- Feign client
+    private final LogPublisher logPublisher;
 
     /**
      * Gửi thông báo ngay lập tức cho danh sách residentIds.
@@ -69,7 +71,8 @@ public class AdminNotificationService {
                     .metadata(Map.of("title", dto.getTitle()))
                     .build();
 
-            monitoringClient.createLog(startLog);
+            // monitoringClient.createLog(startLog);
+            logPublisher.sendLog(startLog);
         } catch (Exception ex) {
             log.warn("Monitoring service unavailable or failed to log start: {}", ex.getMessage());
         }
@@ -165,7 +168,8 @@ public class AdminNotificationService {
                             .metadata(Map.of("residentId", residentId, "error", ex.getMessage()))
                             .build();
 
-                    monitoringClient.createLog(perFailLog);
+                    // monitoringClient.createLog(perFailLog);
+                    logPublisher.sendLog(perFailLog);
                 } catch (Exception mEx) {
                     log.warn("Monitoring createLog failed for FAILED record (resident={}): {}", residentId, mEx.getMessage());
                 }
@@ -189,7 +193,8 @@ public class AdminNotificationService {
                     .metadata(Map.of("results", results))
                     .build();
 
-            monitoringClient.createLog(endLog);
+            // monitoringClient.createLog(endLog);
+            logPublisher.sendLog(endLog);
         } catch (Exception ex) {
             log.warn("Monitoring service unavailable or failed to log end: {}", ex.getMessage());
         }

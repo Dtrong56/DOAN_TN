@@ -3,20 +3,17 @@ package com.example.multi_tenant_service.controller;
 import com.example.multi_tenant_service.entity.Tenant;
 import com.example.multi_tenant_service.service.TenantService;
 import com.example.multi_tenant_service.dto.TenantCreateRequest;
+import com.example.multi_tenant_service.dto.TenantGetDto;
 import com.example.multi_tenant_service.dto.TenantResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 
-import jakarta.validation.Valid;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Map;
@@ -71,7 +68,7 @@ public class TenantController {
 
     //Lấy danh sách tất cả tenant
     @GetMapping
-    public List<Tenant> getAllTenants() {
+    public List<TenantGetDto> getAllTenants() {
         return tenantService.getAllTenants();
     }
 }
