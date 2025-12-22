@@ -116,6 +116,7 @@ public class TenantService {
         ManagementAccount account = new ManagementAccount();
         account.setTenant(savedTenant);
         account.setUserId(managerUserId);
+        account.setProfile(profile);
         account.setActive(true);
         managementAccountRepository.save(account);
 
