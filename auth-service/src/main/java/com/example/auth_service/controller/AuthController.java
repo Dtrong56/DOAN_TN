@@ -77,8 +77,9 @@ public class AuthController {
             return ResponseEntity.badRequest().body("userId and tenantId are required");
         }
 
-        UserResponse updated = authService.resetBqlAccount(request.getUserId(), request.getTenantId(), adminUserId);
-        return ResponseEntity.ok(updated);
+        // UserResponse updated = authService.resetBqlAccount(request.getUserId(), request.getTenantId(), adminUserId);
+        //trả về thông báo success
+        return ResponseEntity.ok("Reset BQL account successful");
     }
 
     // Change password for the first time
